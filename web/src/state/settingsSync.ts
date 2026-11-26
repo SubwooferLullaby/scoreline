@@ -122,6 +122,7 @@ async function upload({ keepalive = false } = {}): Promise<void> {
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body,
     });
+    if (!response.ok) void response.body?.cancel();
     if (response.status === 401) return stop();
     if (!response.ok) return;
     const { updatedAt } = (await response.json()) as { updatedAt: number };
@@ -165,7 +166,11 @@ async function begin(): Promise<void> {
   let server: ServerCopy;
   try {
     const response = await fetch(ENDPOINT, { credentials: "same-origin", cache: "no-store", headers: { Accept: "application/json" } });
-    if (!response.ok) return stop();
+    // An unread body keeps the request open (and the page never network-idle): drop it.
+    if (!response.ok) {
+      void response.body?.cancel();
+      return stop();
+    }
     server = (await response.json()) as ServerCopy;
   } catch {
     return stop();
