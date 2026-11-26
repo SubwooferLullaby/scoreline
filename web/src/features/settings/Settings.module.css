@@ -234,6 +234,11 @@
   }
 }
 
+/* Sports' search sits over a group box, which has no margin of its own: the same gap as a team list's. */
+.search.overGroup {
+  margin-bottom: calc(8 * var(--pt));
+}
+
 .pick {
   display: flex;
   align-items: center;

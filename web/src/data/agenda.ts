@@ -184,6 +184,8 @@ export function collapseTournamentDays(matches: readonly ScheduleItem[], followe
     if (!first) continue;
     const live = sorted.some((m) => m.status === "live");
     const allFinal = sorted.every((m) => m.status === "final" || m.status === "canceled");
+    // A day that's begun counts down to its next match, not its first: a start already past reads "Time TBA".
+    const next = sorted.find((m) => m.status === "scheduled") ?? first;
     const count = sorted.length;
     const names = sorted.slice(0, 2).map((m) => itemTeams(m).map((t) => t.abbreviation).join(" v "));
     const subtitle = [`${count} match${count === 1 ? "" : "es"}`, names.join(", ") + (count > 2 ? " …" : "")].filter(Boolean).join(" · ");
@@ -193,7 +195,7 @@ export function collapseTournamentDays(matches: readonly ScheduleItem[], followe
         sport: "esports",
         league: "cs2",
         day: first.day,
-        start: first.start,
+        start: next.start,
         status: live ? "live" : allFinal ? "final" : "scheduled",
         title: first.competition ?? "Tournament",
         subtitle,

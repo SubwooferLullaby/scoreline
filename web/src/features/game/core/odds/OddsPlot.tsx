@@ -412,41 +412,45 @@ export function scrubReading(data: OddsChartData, lines: readonly OddsLine[], mo
 /**
  * The chart as data for screen readers (OddsChartDescriptor's role on the
  * web: VoiceOver's audio graph has no web equivalent): each period's start
- * and the latest, every outcome's chance then, and ESPN's model.
+ * and the latest, every outcome's chance then, and ESPN's model. Hidden by
+ * a wrapper, not on the table itself: a table never shrinks below its
+ * content, so a hidden one widened a phone's page past the screen.
  */
 function OddsTable({ data, lines, spoken }: { data: OddsChartData; lines: readonly OddsLine[]; spoken: { top: string; bottom: string } }) {
   const end = data.now ?? data.domain.to;
   const moments = [...data.periods.filter((p) => p.start >= data.domain.from && p.start <= data.domain.to).map((p) => ({ t: p.start, label: `Start of ${p.label}` })), { t: end, label: "Latest" }];
   const name = (o: Outcome) => (o === "top" ? spoken.top : o === "bottom" ? spoken.bottom : "Draw");
   return (
-    <table className="visually-hidden">
-      <caption>Win probability over the game</caption>
-      <thead>
-        <tr>
-          <th scope="col">Moment</th>
-          {lines.map((l) => (
-            <th key={l.outcome} scope="col">{`${name(l.outcome)}, Polymarket`}</th>
-          ))}
-          {data.espn.length > 0 ? <th scope="col">{`${spoken.top}, ESPN`}</th> : null}
-        </tr>
-      </thead>
-      <tbody>
-        {moments.map((m) => {
-          const sample = observedPoint(data, m.t);
-          const p = sample ? percents(sample.split, data.final && m.label === "Latest") : null;
-          let espn: number | null = null;
-          for (const w of data.espn) if (w.t <= m.t) espn = w.top;
-          return (
-            <tr key={`${m.label}-${m.t}`}>
-              <th scope="row">{`${m.label}, ${wallTime.format(m.t)}`}</th>
-              {lines.map((l) => (
-                <td key={l.outcome}>{p?.[l.outcome] != null ? `${p[l.outcome]}%` : "–"}</td>
-              ))}
-              {data.espn.length > 0 ? <td>{espn != null ? `${Math.min(Math.max(Math.round(espn * 100), 1), 99)}%` : "–"}</td> : null}
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
+    <div className="visually-hidden">
+      <table>
+        <caption>Win probability over the game</caption>
+        <thead>
+          <tr>
+            <th scope="col">Moment</th>
+            {lines.map((l) => (
+              <th key={l.outcome} scope="col">{`${name(l.outcome)}, Polymarket`}</th>
+            ))}
+            {data.espn.length > 0 ? <th scope="col">{`${spoken.top}, ESPN`}</th> : null}
+          </tr>
+        </thead>
+        <tbody>
+          {moments.map((m) => {
+            const sample = observedPoint(data, m.t);
+            const p = sample ? percents(sample.split, data.final && m.label === "Latest") : null;
+            let espn: number | null = null;
+            for (const w of data.espn) if (w.t <= m.t) espn = w.top;
+            return (
+              <tr key={`${m.label}-${m.t}`}>
+                <th scope="row">{`${m.label}, ${wallTime.format(m.t)}`}</th>
+                {lines.map((l) => (
+                  <td key={l.outcome}>{p?.[l.outcome] != null ? `${p[l.outcome]}%` : "–"}</td>
+                ))}
+                {data.espn.length > 0 ? <td>{espn != null ? `${Math.min(Math.max(Math.round(espn * 100), 1), 99)}%` : "–"}</td> : null}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
   );
 }

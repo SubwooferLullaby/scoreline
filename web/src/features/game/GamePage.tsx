@@ -14,7 +14,7 @@
  * the hero, the docked bar, the sections, the tab and the alerts read the
  * game as presented at p; the theaters keep today's inputs.
  */
-import { CompetitionContext } from "../settings/CompetitionContext";
+import { CompetitionContext, competitionLink } from "../settings/CompetitionContext";
 import { Suspense, use, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router";
 import { Button, EmptyState, ErrorState, IconButton, PageHeader } from "../../design/components";
@@ -307,6 +307,9 @@ function Loaded({ game, event: raw, palette, identity, colors, columns, geometry
   // The page's modules: what this state's plan has to show, less what the sport hides, in the sport's order (or a drag's proposal).
   const modules = usePageModules(event, sport, geometry, columns, { detail, palette, names: context.names, scores });
   useRemeasure(geometry, `${modules.placed.map((p) => p.section).join()}|${columns}|${modules.foldKey}`);
+  // The link over the hero already names a CS2 match's tournament: the card doesn't say it twice.
+  const caption = event.caption ?? detail.roundName;
+  const heroCaption = caption != null && caption === competitionLink(event, game.detail?.competition ?? null)?.name ? null : caption;
 
   return (
     <>
@@ -330,7 +333,7 @@ function Loaded({ game, event: raw, palette, identity, colors, columns, geometry
           note={sport.heroNote ?? null}
           staleSince={game.staleSince}
           spoken={spokenHero(heroEvent, scores, fallback, [stoppage, sport.heroSpoken ?? null, behind ? behindLiveSpoken(page.broadcast) : null].filter(Boolean).join(". ") || null)}
-          caption={event.caption ?? detail.roundName}
+          caption={heroCaption}
           trophy={sport.trophy ?? null}
           badge={sport.heroBadge ?? null}
           heroRef={(el) => {

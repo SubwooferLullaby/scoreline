@@ -74,7 +74,9 @@ export function ScoresPage({ variant }: { readonly variant: "page" | "sidebar" }
       }
       if ((event.key === "Enter" || event.key === " ") && highlight.id && !(focused && (focused.tagName === "A" || focused.tagName === "BUTTON"))) {
         event.preventDefault();
-        navigate(`/game/${encodeURIComponent(highlight.id)}`, { state: { viaKeyboard: true } satisfies NavState });
+        // The row's own link, its league with it.
+        const row = container.querySelector<HTMLAnchorElement>(`a[data-nav-id="${CSS.escape(highlight.id)}"]`);
+        navigate(row?.getAttribute("href") ?? `/game/${encodeURIComponent(highlight.id)}`, { state: { viaKeyboard: true } satisfies NavState });
       }
     };
     window.addEventListener("keydown", onKey);

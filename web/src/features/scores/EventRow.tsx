@@ -17,6 +17,7 @@
  */
 import { memo, useEffect, useRef, useState, type CSSProperties } from "react";
 import { Link } from "react-router";
+import { eventHref } from "../../data/gameHref";
 import { Icon, LiveStatus } from "../../design/components";
 import { FLASH } from "../../design/motion";
 import { contextLine, countdown, clockTime, dayName, enDash, isDelayed, laneLines, spokenRecord, spokenSummary, unplayed } from "../../data/format";
@@ -80,7 +81,7 @@ function EventRowView({ event, keyboard, selected, detail, stale, revealDelay, t
   return (
     <GameMenuHost event={event} className={styles.rowWrap} buttonClassName={styles.more}>
     <Link
-      to={`/game/${encodeURIComponent(event.id)}`}
+      to={eventHref(event)}
       className={styles.row}
       data-nav-id={event.id}
       data-keyboard={keyboard}

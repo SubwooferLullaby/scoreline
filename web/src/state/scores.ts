@@ -95,6 +95,8 @@ export interface Scoreboard {
   readonly liveCount: number;
   /** "loading": nothing has answered yet; "offline": every league failed. */
   readonly status: "loading" | "ready" | "offline";
+  /** Every league has answered or failed once: an event missing now isn't on any board (the game page then looks for it itself). */
+  readonly settled: boolean;
   /** When the newest data arrived (epoch ms), or null. */
   readonly lastUpdated: number | null;
   readonly fetching: boolean;
@@ -224,6 +226,7 @@ export function useScoreboard({ poll = true, background = false }: ScoreboardOpt
     const matters = (e: ScoreEvent) => e.id === pinnedID || involvesFollowed(settings, e);
     const cadence = hidden ? backgroundInterval(results, matters, now) : pollInterval(results, settings, now);
     const answered = Object.keys(results).length > 0 || leagues.length === 0;
+    const settled = leagues.every((_, i) => results[leagues[i]!.id] != null);
     const quiet = findQuiet(results, settings, now);
     return {
       results,
@@ -233,6 +236,7 @@ export function useScoreboard({ poll = true, background = false }: ScoreboardOpt
       screened: screenedLeagues(quiet, results, settings, now),
       liveCount: countLive(results, settings),
       status: !answered ? ("loading" as const) : allFailed(results, settings) ? ("offline" as const) : ("ready" as const),
+      settled,
       lastUpdated: queries.reduce<number | null>((t, q) => (q.dataUpdatedAt > 0 ? Math.max(t ?? 0, q.dataUpdatedAt) : t), null),
       leagueOf,
       event,

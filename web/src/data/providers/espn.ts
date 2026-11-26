@@ -131,7 +131,8 @@ export function makeEvent(e: JSONValue, sport: Sport, path: string, now: number)
       // ESPN uses 99 for unranked.
       rank: rank != null && rank >= 1 && rank <= 25 ? rank : null,
       record: record("total"),
-      conferenceRecord: record("vsconf"),
+      // The NBA's summaries say "0-0" for every team all season: a conference record with no games says nothing.
+      conferenceRecord: ((r) => (r == null || /^0–0(–0)?$/.test(r) ? null : r))(record("vsconf")),
       alternateColor: str(at(team, "alternateColor")) ?? null,
     };
   };

@@ -157,6 +157,8 @@ test.describe("live odds", () => {
     await expect(s.getByRole("heading", { name: "How the Odds Moved" })).toBeVisible();
     await expect(s.locator('[class*="_ring_"]'), "a final's ends don't pulse").toHaveCount(0);
     await expect(s.locator('[class*="_endLabel_"]')).toHaveCount(2);
+    const width = await page.evaluate(() => document.documentElement.scrollWidth);
+    expect(width, "the screen readers' table doesn't widen a phone's page").toBeLessThanOrEqual(390);
     await s.screenshot({ path: join(OUT, "odds-final-390-dark.png") });
     s = await open(page, "game=soccer&state=final");
     await expect(s.getByText("Polymarket's market through the game, a line per outcome.")).toBeVisible();

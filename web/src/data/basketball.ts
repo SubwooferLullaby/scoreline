@@ -423,7 +423,10 @@ function scoreOf(play: JSONValue, topIsHome: boolean): { top: number; bottom: nu
 /**
  * The game's story for the key-plays list: every run of 8+ unanswered
  * points, lead changes in the fourth quarter and overtime, and the score at
- * the end of each period. Oldest first (NBADetail.keyMoments).
+ * the end of each period. Oldest first (NBADetail.keyMoments; a web fix: a
+ * run is placed at its last basket, where the Mac appends it when it closes,
+ * after any period's end it ran through, so a run to the buzzer listed above
+ * "Final").
  */
 export function keyMoments(summary: JSONValue, side: SideOf, topIsHome: boolean): DetailMoment[] {
   void side;
@@ -433,7 +436,8 @@ export function keyMoments(summary: JSONValue, side: SideOf, topIsHome: boolean)
   let bottom = 0;
   /** The team ahead most recently (a tie doesn't end a lead; the other team going ahead does). */
   let leader: Side | null = null;
-  let run: { side: Side; points: number; last: JSONValue } | null = null;
+  /** `at`: where its row goes, just after its last basket's own rows, so a run closed later (by the other side's next basket, or the game's end) keeps the list in order. */
+  let run: { side: Side; points: number; last: JSONValue; at: number } | null = null;
   let unique = 0;
   const moment = (play: JSONValue, text: string, s: Side | null, t: number, b: number, id?: string, clock?: string): DetailMoment => {
     const period = periodOf(play);
@@ -454,7 +458,7 @@ export function keyMoments(summary: JSONValue, side: SideOf, topIsHome: boolean)
     const id = str(at(run.last, "id")) ?? `run-${unique++}`;
     // A run's last basket can also be a lead change: keep IDs unique.
     const distinct = moments.some((m) => m.id === id) ? `${id}-run` : id;
-    moments.push(moment(run.last, `${run.points}–0 run`, run.side, score.top, score.bottom, distinct));
+    moments.splice(run.at, 0, moment(run.last, `${run.points}–0 run`, run.side, score.top, score.bottom, distinct));
   };
   plays.forEach((play, index) => {
     const end = periodEnd(play);
@@ -477,7 +481,7 @@ export function keyMoments(summary: JSONValue, side: SideOf, topIsHome: boolean)
       run.last = play;
     } else {
       close();
-      run = { side: scorer, points: gained, last: play };
+      run = { side: scorer, points: gained, last: play, at: moments.length };
     }
     const now: Side | null = next.top > next.bottom ? "top" : next.bottom > next.top ? "bottom" : null;
     // Lead changes that decide games: fourth quarter and overtime.
@@ -485,6 +489,7 @@ export function keyMoments(summary: JSONValue, side: SideOf, topIsHome: boolean)
       moments.push(moment(play, `Lead change · ${short(str(at(play, "text")) ?? "")}`, now, next.top, next.bottom));
     }
     if (now) leader = now;
+    run.at = moments.length;
     top = next.top;
     bottom = next.bottom;
   });

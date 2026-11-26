@@ -55,6 +55,15 @@ describe("a game from its summary", () => {
     expect(event.content.bottom.id).toBe(board.content.bottom.id);
     expect(event.start).toBe(board.start);
   });
+
+  it("keeps a conference record only when it has games (the NBA's summaries say 0-0 all season)", () => {
+    const nba = eventFromSummary(fixture("espn-nba-summary.json"), "basketball/nba", "basketball", NOW);
+    const college = eventFromSummary(fixture("espn-cfb-summary.json"), "football/college-football", "football", NOW);
+    if (nba?.content.kind !== "match" || college?.content.kind !== "match") throw new Error("no match");
+    expect(nba.content.top.record).not.toBeNull();
+    expect([nba.content.top.conferenceRecord, nba.content.bottom.conferenceRecord]).toEqual([null, null]);
+    expect([college.content.top.conferenceRecord, college.content.bottom.conferenceRecord].sort()).toEqual(["2–2", "3–2"]);
+  });
 });
 
 describe("the ESPN summary, baseball", () => {

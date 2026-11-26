@@ -8,7 +8,8 @@
  * Field with its drive, chips and drive list, the hero's possession), the
  * final page (the score by quarter with overtime, scoring plays, team stats),
  * the college table with AP ranks and its links, the docked bar's down and
- * possession, a touchdown's moment, and linked focus (a scoring play lights
+ * possession, a touchdown's moment, the drive named for its team after a
+ * punt, and linked focus (a scoring play lights
  * its quarter; a drive row lights its bar). Saves screenshots to
  * SCORELINE_SCREENSHOTS.
  */
@@ -138,6 +139,12 @@ for (const size of WIDTHS) {
           await page.waitForTimeout(650);
           await field.screenshot({ path: join(OUT, `${size.name}-${scheme}-football-touchdown.png`) });
           expect(errors, errors.join("\n")).toEqual([]);
+        });
+
+        test("after a punt, the drive on the field is still the punting team's", async ({ page }) => {
+          // Twenty-two plays in, the Texans have just punted: the Giants have the ball, the listed snaps are Houston's.
+          await page.goto(`${NFL}?demo&nfl=22`);
+          await expect(page.getByRole("group", { name: /^1st & 10 at NYG \d+\. HOU drive · 3 plays · 0 yards$/ })).toBeAttached({ timeout: 15_000 });
         });
       }
     });

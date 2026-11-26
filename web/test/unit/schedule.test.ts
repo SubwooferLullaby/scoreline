@@ -266,6 +266,11 @@ describe("the agenda", () => {
     expect(tournamentDay?.children).toHaveLength(7);
     expect(tournamentDay?.subtitle?.startsWith("7 matches")).toBe(true);
     expect(matches.every((m) => m.start.kind === "provisional" || m.start.kind === "exact")).toBe(true);
+    // Once the day's first match is played, the row is timed by the next one.
+    const children = tournamentDay!.children!;
+    const played = collapseTournamentDays(children.map((m, i) => (i === 0 ? { ...m, status: "final" as const } : m)), new Set())[0]!;
+    expect(played.start).toEqual(children[1]!.start);
+    expect(played.status).toBe("scheduled");
   });
 
   it("reads followed teams' bo3 matches and S-tier URLs", () => {

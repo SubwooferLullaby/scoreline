@@ -711,9 +711,15 @@ export function twoMinuteDrill(period: number, seconds: number, possession: Side
   return deficit >= 1 && deficit <= 8;
 }
 
-/** "IND drive · 6 plays · 62 yards" for the snaps on the field (FootballField.driveSummary). */
+/**
+ * "IND drive · 6 plays · 62 yards" for the snaps on the field (FootballField.driveSummary).
+ * The snaps' own team names it: after a punt the field still lists the punting
+ * team's drive until the next snap, while the ball already belongs to the other
+ * side. (The Mac names the team with the ball, so it says "DET drive" over CHI's
+ * snaps and counts their yards backwards.)
+ */
 export function driveSummary(rows: readonly DrivePlay[], drive: readonly DrivePlay[], possession: Side | null, names: { top: string; bottom: string }): string | null {
-  const side = possession ?? rows.at(-1)?.side ?? drive.at(-1)?.side ?? null;
+  const side = rows.at(-1)?.side ?? possession ?? drive.at(-1)?.side ?? null;
   if (!side) return null;
   const team = side === "bottom" ? names.bottom : names.top;
   const first = rows[0];
