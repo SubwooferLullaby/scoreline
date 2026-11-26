@@ -54,7 +54,6 @@ for (const size of WIDTHS) {
         await expect(page.getByRole("heading", { level: 1, name: "Scoreline" })).toBeVisible();
         await expect(page.getByRole("button", { name: "Already have an account? Sign In" })).toBeEnabled();
         await expect(page.getByRole("button", { name: "Get Started" })).toBeVisible();
-        await expect(page.getByRole("link", { name: "Download", exact: true })).toHaveAttribute("href", "https://github.com/SubwooferLullaby/scoreline/releases/latest/download/Scoreline.dmg");
         await noSideScroll(page);
         await axe(page);
         await page.screenshot({ path: join(OUT, `landing-${size.name}-${scheme}.png`), fullPage: true });

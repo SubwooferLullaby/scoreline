@@ -18,14 +18,20 @@ if (import.meta.env.DEV) {
   installDemo();
 }
 
+/** After the page has loaded, or now if it already has: this module can run after `load` (it awaits above in development). */
+function afterLoad(run: () => void) {
+  if (document.readyState === "complete") run();
+  else window.addEventListener("load", run, { once: true });
+}
+
 // The offline shell and notification clicks (public/sw.js). Production only:
 // in development it would cache what Vite serves fresh.
 if (import.meta.env.PROD && "serviceWorker" in navigator) {
-  window.addEventListener("load", () => void navigator.serviceWorker.register("/sw.js").catch(() => {}), { once: true });
+  afterLoad(() => void navigator.serviceWorker.register("/sw.js").catch(() => {}));
 }
 
 // Your settings follow your account (state/settingsSync.ts): read after the first paint, never in its way.
-window.addEventListener("load", () => void import("./state/settingsSync").then((m) => m.startSettingsSync()), { once: true });
+afterLoad(() => void import("./state/settingsSync").then((m) => m.startSettingsSync()));
 
 // A page open across a deploy asks for chunks the new deploy doesn't have
 // (404s, worker/index.ts): load the new version once rather than fail. The

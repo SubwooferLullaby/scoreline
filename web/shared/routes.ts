@@ -24,6 +24,7 @@ export const APP_SECTIONS: readonly string[] = [
   "bracket",
   "team",
   "player",
+  "admin",
 ];
 
 /** Development only: the render harnesses (`/dev/theater`, `/dev/odds`). */
