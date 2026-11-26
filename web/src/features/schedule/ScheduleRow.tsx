@@ -57,7 +57,10 @@ export interface ScheduleRowProps {
 function ScheduleRowView({ item, event, keyboard, detail, showsCompetition, expanded = false, details = true, revealDelay, travel, onHover, onSelect }: ScheduleRowProps) {
   const followed = useSettings((s) => s.followed);
   const isFollowed = (c: Competitor) => c.id != null && followed.some((t) => t.id === c.id);
-  const lane = detail === "lane";
+  // A tournament day's row is its name and what's on: it takes the lane's room too, so the name
+  // ("PGL Major Singapore 2026 Stage 1") isn't cut beside an empty stretch of row.
+  const day = item.children != null && event.content.kind !== "match";
+  const lane = detail === "lane" && !day;
   const reveal = revealDelay != null ? { className: styles.reveal, style: { animationDelay: `${revealDelay}s` } as CSSProperties } : null;
   // A game that didn't happen recedes; one that was stopped keeps its score, quietly; a forfeit's score isn't one.
   const postponed = item.status === "postponed" && item.result?.kind !== "suspended";
@@ -68,7 +71,7 @@ function ScheduleRowView({ item, event, keyboard, detail, showsCompetition, expa
   const label = spokenRow(item, event, showsCompetition);
   const content = (
     <>
-      <span className={styles.teams} aria-hidden="true">
+      <span className={styles.teams} data-span={(day && detail === "lane") || undefined} aria-hidden="true">
         {event.content.kind === "match" ? (
           <>
             <TeamLine c={event.content.top} event={event} postponed={postponed} records={detail !== "compact"} followed={isFollowed(event.content.top)} showsScore={showsScores} quiet={quietScores} reveal={reveal} travel={travel} />
@@ -95,7 +98,7 @@ function ScheduleRowView({ item, event, keyboard, detail, showsCompetition, expa
         </span>
       ) : null}
       <span className={[styles.status, reveal?.className].filter(Boolean).join(" ")} style={reveal?.style} aria-hidden="true">
-        <StatusColumn item={item} event={event} networks={lane ? 2 : 1} />
+        <StatusColumn item={item} event={event} networks={detail === "lane" ? 2 : 1} />
       </span>
     </>
   );

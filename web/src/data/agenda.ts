@@ -187,7 +187,11 @@ export function collapseTournamentDays(matches: readonly ScheduleItem[], followe
     // A day that's begun counts down to its next match, not its first: a start already past reads "Time TBA".
     const next = sorted.find((m) => m.status === "scheduled") ?? first;
     const count = sorted.length;
-    const names = sorted.slice(0, 2).map((m) => itemTeams(m).map((t) => t.abbreviation).join(" v "));
+    // The two it names are what's on now and next, then what's been played: a day that's begun leads with
+    // its live and upcoming matches, not its first (finished) ones. (The Mac's names its first two in time order.)
+    const rank = (m: ScheduleItem) => (m.status === "live" ? 0 : m.status === "scheduled" ? 1 : 2);
+    const named = [...sorted].sort((a, b) => rank(a) - rank(b));
+    const names = named.slice(0, 2).map((m) => itemTeams(m).map((t) => t.abbreviation).join(" v "));
     const subtitle = [`${count} match${count === 1 ? "" : "es"}`, names.join(", ") + (count > 2 ? " …" : "")].filter(Boolean).join(" · ");
     rows.push(
       scheduleItem({

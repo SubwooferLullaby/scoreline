@@ -134,3 +134,56 @@ test.describe("interactions", () => {
     await settle(page);
   });
 });
+
+/**
+ * A CS2 tournament day at 1440 (the All scope folds it to one row): its
+ * name has the lane's room too, so it isn't cut beside an empty stretch, and
+ * the two matches it names are the live and next ones, not the day's first
+ * (finished) ones. bo3.gg answered with today's matches, two of them played.
+ */
+test.describe("1440 CS2 tournament day", () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+  const TOURNAMENT = "PGL Major Singapore 2026 Stage 1";
+
+  test("the day's name in full, its live and next matches named first", async ({ page }) => {
+    const errors = collectErrors(page);
+    const day = new Date();
+    day.setHours(0, 0, 0, 0);
+    const base = day.getTime();
+    const iso = (t: number) => new Date(t).toISOString().replace("Z", "+00:00");
+    const match = (id: number, at: number, status: string, a: [number, string], b: [number, string], score: [number, number] | null) => ({
+      id,
+      slug: `m-${id}`,
+      status,
+      start_date: iso(at),
+      tournament_id: 900,
+      tournament: { id: 900, name: TOURNAMENT },
+      bo_type: 3,
+      team1: { id: a[0], name: a[1] },
+      team2: { id: b[0], name: b[1] },
+      team1_score: score?.[0] ?? 0,
+      team2_score: score?.[1] ?? 0,
+      winner_team_id: score ? (score[0] > score[1] ? a[0] : b[0]) : null,
+    });
+    const results = [
+      match(9001, base + 60_000, "finished", [91, "Wildcard"], [92, "Chinggis Warriors"], [2, 1]),
+      match(9002, base + 120_000, "finished", [93, "Imperial"], [94, "Liquid"], [0, 2]),
+      match(9003, base + 180_000, "current", [95, "Lynn Vision"], [96, "HEROIC"], [1, 0]),
+      match(9004, Math.max(base + 240_000, Math.min(Date.now() + 1_800_000, base + 86_340_000)), "upcoming", [97, "M80"], [98, "100 Thieves"], null),
+    ];
+    await page.route(/\/api\/api\.bo3\.gg\/api\/v1\/matches\?.*finished/, (route) => route.fulfill({ json: { results, total: { count: results.length } } }));
+    await page.goto("/schedule");
+    await settle(page);
+    const row = page.locator("main button[aria-expanded]").filter({ hasText: TOURNAMENT }).first();
+    await expect(row).toBeVisible({ timeout: 20_000 });
+    // The name in full: nothing cut off (its text fits its box).
+    const title = row.locator('[class*="_fieldTitle_"]');
+    const cut = await title.evaluate((e) => e.scrollWidth > e.clientWidth + 1);
+    expect(cut, "the tournament's name is cut").toBe(false);
+    await expect(title).toHaveText(TOURNAMENT);
+    // What's on now and next comes first.
+    await expect(row).toContainText("4 matches · LV v HER, M80 v 1T …");
+    await row.screenshot({ path: join(OUT, "1440-light-schedule-cs2-day.png") });
+    expect(errors, errors.join("\n")).toEqual([]);
+  });
+});
