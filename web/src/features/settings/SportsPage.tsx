@@ -81,7 +81,7 @@ export function SportsPage() {
     <div className={styles.page}>
       <PageHeader title="Sports" leading={<PageBack />} />
       <div className={`${styles.column} ${styles.entrance}`}>
-        <label className={styles.search}>
+        <label className={`${styles.search} ${styles.overGroup}`}>
           <Icon name="search" size={11} />
           <span className="visually-hidden">Search teams and competitions</span>
           <input ref={field} type="search" placeholder="Search teams and competitions" value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={onKeyDown} />
