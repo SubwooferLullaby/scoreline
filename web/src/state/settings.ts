@@ -206,19 +206,46 @@ function load(): Settings {
 type Listener = () => void;
 let current: Settings = load();
 const listeners = new Set<Listener>();
+const localListeners = new Set<Listener>();
 
 function emit() {
   for (const listener of listeners) listener();
 }
 
-function commit(next: Settings) {
-  if (next === current) return;
+function store(next: Settings) {
   current = next;
   try {
     globalThis.localStorage?.setItem(STORAGE_KEY, JSON.stringify(next));
   } catch {
     // Storage full or blocked: the change still holds for this session.
   }
+}
+
+function commit(next: Settings) {
+  if (next === current) return;
+  store(next);
+  emit();
+  for (const listener of localListeners) listener();
+}
+
+/**
+ * Settings sync (state/settingsSync.ts): changes made in this tab, through
+ * the actions below. Not another tab's (that tab syncs its own), and not an
+ * adopted copy (`adoptSettings`).
+ */
+export function subscribeLocalChanges(listener: Listener): () => void {
+  localListeners.add(listener);
+  return () => localListeners.delete(listener);
+}
+
+/**
+ * The account's copy replaces this device's (settings sync): sanitized like
+ * anything read from storage, stored under the same key (so the before-paint
+ * theme reader sees it), and announced to every reader, but not as a local
+ * change, so it isn't sent back.
+ */
+export function adoptSettings(raw: unknown): void {
+  store(sanitize(raw));
   emit();
 }
 
