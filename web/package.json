@@ -12,6 +12,7 @@
 		"test:watch": "vitest",
 		"test:e2e": "playwright test",
 		"fixtures": "node scripts/record-fixtures.mjs",
+		"stats": "NODE_OPTIONS=\"--experimental-strip-types --disable-warning=ExperimentalWarning\" node scripts/stats.mjs",
 		"deploy": "NODE_OPTIONS=\"--experimental-strip-types --disable-warning=ExperimentalWarning\" cf deploy"
 	},
 	"devDependencies": {

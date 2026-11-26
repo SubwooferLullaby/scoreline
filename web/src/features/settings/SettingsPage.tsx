@@ -24,6 +24,7 @@ import { settings, useSettings, type CelebrationLevel, type Settings, type Theme
 import { isSupportedTeam, teamRef } from "../../data/profiles/models";
 import { LinkOrigin, linkNameClass, TeamLink } from "../profiles/ProfileLinks";
 import { Credits, KeyboardSection, NotificationsSection, SoundsRow, TabSection } from "./ShellSettings";
+import { AdminLink } from "../admin/AdminLink";
 import styles from "./Settings.module.css";
 
 const all = (s: Settings) => s;
@@ -105,6 +106,7 @@ export function SettingsPage() {
         <NotificationsSection />
 
         <KeyboardSection />
+        <AdminLink />
         <Credits />
       </div>
     </div>
