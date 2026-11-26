@@ -6,7 +6,7 @@ The GitHub settings that go with the README. Nothing here is applied automatical
 
 ```sh
 gh repo edit SubwooferLullaby/scoreline \
-  --description "Live scores in your Mac's menu bar: MLB, NFL, NBA, soccer, CS2 and climbing, with every play replayed in isometric 3D. Native SwiftUI, free, and on the web." \
+  --description "Live scores, told play by play: MLB, NFL, NBA, soccer, CS2 and climbing, every play on a small animated field. Free on the web, plus a native Mac menu bar app." \
   --homepage "https://scoreline.fyi"
 
 gh repo edit SubwooferLullaby/scoreline \
