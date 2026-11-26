@@ -112,9 +112,12 @@ test.describe("climbing disciplines", () => {
     // Tokyo 2027 is boulder only: its detail is never asked for.
     expect(requests.some((u) => /\/events\/1544(\?|$)/.test(u))).toBe(false);
 
-    // Results: no speed category in a finished competition.
+    // Results: a finished competition with winners, opened, has its lead categories and no speed one.
+    // (The newest finished one, whatever the date: a season's last can be one with no categories, as
+    // November 2026's Nations Grand Finale is.)
     await page.goto("/schedule/climbing?mode=results");
     await settle(page);
+    await page.locator("main [data-row-id]").filter({ hasText: "🥇" }).first().click();
     await expect(page.getByText("Lead Women", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("Speed Men", { exact: true })).toHaveCount(0);
   });
