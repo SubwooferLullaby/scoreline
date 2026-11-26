@@ -241,6 +241,9 @@ describe("snaps", () => {
     expect(drive[0]?.text).toBe("Woody Marks 3 Yd Rush");
     expect(currentDrive(plays).at(-1)?.text).toContain("Devin Singletary 30 Yd Rush");
     expect(driveSummary(drive.filter((p) => p.kind !== "kick"), drive, "bottom", { top: "NYG", bottom: "HOU" })).toBe("HOU drive · 9 plays · 48 yards");
+    // After the drive ends the ball is the other side's, but the snaps listed are still HOU's.
+    expect(driveSummary(drive.filter((p) => p.kind !== "kick"), drive, "top", { top: "NYG", bottom: "HOU" })).toBe("HOU drive · 9 plays · 48 yards");
+    expect(driveSummary([], [], "top", { top: "NYG", bottom: "HOU" })).toBe("NYG drive · starting");
   });
 });
 
