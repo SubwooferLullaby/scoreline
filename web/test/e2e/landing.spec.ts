@@ -51,7 +51,7 @@ for (const size of WIDTHS) {
         page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
 
         await page.goto("/");
-        await expect(page.getByRole("heading", { level: 1, name: "Scoreline" })).toBeVisible();
+        await expect(page.getByRole("heading", { level: 1, name: /Live scores, told play/ })).toBeVisible();
         await expect(page.getByRole("button", { name: "Already have an account? Sign In" })).toBeEnabled();
         await expect(page.getByRole("button", { name: "Get Started" })).toBeVisible();
         await noSideScroll(page);

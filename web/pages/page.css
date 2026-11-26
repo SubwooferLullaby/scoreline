@@ -2,7 +2,8 @@
  * The landing, privacy, terms and 404 pages (pages/*.html): plain text on a
  * single column, like a design engineer's personal site. System fonts, a
  * 34rem measure, muted secondary text, light and dark from the system, links
- * underlined on hover only. No images but the favicon. Not the app's design
+ * underlined on hover only. No images but the favicon (the landing adds its
+ * screenshots and layout in landing.css). Not the app's design
  * system on purpose: these pages load nothing of the app.
  */
 :root {

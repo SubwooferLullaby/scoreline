@@ -25,48 +25,93 @@
 		<meta name="twitter:description" content="Live scores, told play by play." />
 		<meta name="twitter:image" content="https://scoreline.fyi/og.png" />
 		<link rel="stylesheet" href="/pages/page.css" />
+		<link rel="stylesheet" href="/pages/landing.css" />
 		<script type="module" src="/src/landing/landing.ts"></script>
 	</head>
-	<body>
+	<body class="landing">
+		<nav class="nav" aria-label="Scoreline">
+			<a class="wordmark" href="/" aria-label="Scoreline, home"><img src="/icon-64.png" alt="" width="20" height="20" />Scoreline</a>
+			<div class="nav-links">
+				<a href="https://github.com/SubwooferLullaby/scoreline">GitHub</a>
+				<button type="button" class="link" data-action="passkey">Sign in</button>
+			</div>
+		</nav>
+
 		<main>
-			<header>
-				<h1>Scoreline</h1>
-				<p class="tagline">Live scores, told play by play.</p>
+			<header class="hero">
+				<p class="eyebrow reveal"><span class="live-dot" aria-hidden="true"></span>Free, on the web</p>
+				<h1 class="reveal">Live scores, told play&nbsp;by&nbsp;play.</h1>
+				<p class="lede reveal">Scoreline follows the games you care about and shows each one as it happens: every pitch, drive and shot in order, on a small animated field, with the score, the timeline and the box score beside it.</p>
+
+				<div class="actions reveal">
+					<button type="button" class="button primary" data-action="create">Get Started</button>
+					<!-- google --><button type="button" class="button" data-action="google"><svg class="g" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92a8.78 8.78 0 0 0 2.68-6.62Z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18Z"/><path fill="#FBBC05" d="M3.97 10.72a5.4 5.4 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3.01-2.33Z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58A8.97 8.97 0 0 0 9 0 9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58Z"/></svg><span data-label>Continue with Google</span></button><!-- /google -->
+				</div>
+				<p class="fine reveal">Get Started makes a passkey account: Face ID, Touch ID, Windows Hello or your password manager. No password, no email. <button type="button" class="link" data-action="passkey">Already have an account? Sign In</button></p>
+				<p class="status" data-status role="status" aria-live="polite" hidden></p>
+				<noscript><p class="status">Signing in needs JavaScript.</p></noscript>
 			</header>
 
-			<p>Scoreline follows the games you care about and shows each one as it happens: every pitch, drive and shot in order, on a small animated field, with the score, the timeline and the box score beside it.</p>
-			<p>Soccer, the NFL and college football, MLB, the NBA and WNBA, Counter-Strike 2 and climbing.</p>
-			<p>It's free. Sign in to start.</p>
+			<figure class="shot reveal">
+				<div class="frame">
+					<div class="chrome" aria-hidden="true"><span></span><span></span><span></span><b>scoreline.fyi</b></div>
+					<picture>
+						<source srcset="/landing/phone-dark.webp" media="(max-width: 40rem) and (prefers-color-scheme: dark)" width="720" height="1292" />
+						<source srcset="/landing/phone-light.webp" media="(max-width: 40rem)" width="720" height="1292" />
+						<source srcset="/landing/game-dark.webp" media="(prefers-color-scheme: dark)" width="2000" height="1111" />
+						<img src="/landing/game-light.webp" width="2000" height="1111" alt="Scoreline on a desktop: the scores list beside a live NFL game page, Giants 21, Texans 14, with the play replayed on an animated field, win probability, the drive chart and every scoring play." fetchpriority="high" decoding="async" />
+					</picture>
+				</div>
+			</figure>
 
-			<div class="actions">
-				<button type="button" class="button primary" data-action="create">Get Started</button>
-				<!-- google --><button type="button" class="button" data-action="google">Continue with Google</button><!-- /google -->
-			</div>
-			<p class="secondary muted">Your account is a passkey: Face ID, Touch ID, Windows Hello or your password manager. No password, no email.</p>
-			<p class="secondary"><button type="button" class="link" data-action="passkey">Already have an account? Sign In</button></p>
-			<p class="status" data-status role="status" aria-live="polite" hidden></p>
-			<noscript><p class="status">Signing in needs JavaScript.</p></noscript>
-
-			<section aria-labelledby="whats-in-it">
-				<h2 id="whats-in-it">What's in it</h2>
-				<ul>
-					<li>Every league you follow, live, in one list.</li>
-					<li>A page for every game: the plays in order, an animated view of the field, the timeline, the box score and win probability.</li>
-					<li>Schedules, standings, brackets, and team and player pages.</li>
-					<li>Your teams and settings follow you to every device you sign in on.</li>
-					<li>An alert when your team scores, if you want one, while Scoreline is open in a tab.</li>
+			<section class="row" aria-labelledby="sports">
+				<h2 id="sports">Sports</h2>
+				<ul class="chips">
+					<li>Soccer</li>
+					<li>NFL</li>
+					<li>College football</li>
+					<li>MLB</li>
+					<li>NBA</li>
+					<li>WNBA</li>
+					<li>Counter-Strike 2</li>
+					<li>Climbing</li>
 				</ul>
 			</section>
 
-			<section aria-labelledby="how-it-works">
-				<h2 id="how-it-works">How it works</h2>
-				<p>Scores come from public sports feeds. A play usually reaches Scoreline within a minute of happening. Each game page runs a short delay so that plays arrive in order and never jump.</p>
+			<section class="row" aria-labelledby="whats-in-it">
+				<h2 id="whats-in-it">What's in it</h2>
+				<div class="split">
+					<dl class="features">
+						<div><dt>Every play, in order</dt><dd>Each game page runs a short delay, so plays arrive in sequence and never jump.</dd></div>
+						<div><dt>A small animated field</dt><dd>Snaps, pitches and shots replayed as they happened, with the key player tagged.</dd></div>
+						<div><dt>Every league in one list</dt><dd>The leagues you follow, live, with the situation under each score.</dd></div>
+						<div><dt>The whole game</dt><dd>The timeline, the box score, win probability, schedules, standings and brackets.</dd></div>
+						<div><dt>Yours on every device</dt><dd>Your teams and settings follow you wherever you sign in.</dd></div>
+						<div><dt>Alerts, if you want them</dt><dd>A notification when your team scores, while Scoreline is open in a tab.</dd></div>
+					</dl>
+					<figure class="phone">
+						<picture>
+							<source srcset="/landing/phone-dark.webp" media="(prefers-color-scheme: dark)" />
+							<img src="/landing/phone-light.webp" width="720" height="1292" alt="The same game on a phone: the score, and the Texans' 10-yard run for a first down on the animated field." loading="lazy" decoding="async" />
+						</picture>
+					</figure>
+				</div>
 			</section>
 
+			<section class="row" aria-labelledby="how-it-works">
+				<h2 id="how-it-works">How it works</h2>
+				<p>Scores come from public sports feeds. A play usually reaches Scoreline within a minute of happening. It runs in any browser and installs to your phone's home screen like an app.</p>
+			</section>
 
-			<footer>
-				<a href="https://github.com/SubwooferLullaby/scoreline">GitHub</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a>
-			</footer>
+			<section class="row" aria-labelledby="cost">
+				<h2 id="cost">Cost</h2>
+				<p>Free. No ads, no trackers: the only analytics are Scoreline's own, and they never leave its database.</p>
+			</section>
 		</main>
+
+		<footer class="footer">
+			<span>Scoreline</span>
+			<span class="footer-links"><a href="https://github.com/SubwooferLullaby/scoreline">GitHub</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a></span>
+		</footer>
 	</body>
 </html>

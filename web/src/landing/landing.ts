@@ -36,11 +36,13 @@ function busy(button: HTMLButtonElement | null, on: boolean, label?: string) {
   for (const b of buttons) b.disabled = on;
   if (!button) return;
   button.setAttribute("aria-busy", String(on));
+  // Only the label's text changes, so an icon beside it (Google's) stays.
+  const text = button.querySelector<HTMLElement>("[data-label]") ?? button;
   if (on) {
-    button.dataset.label = button.textContent ?? "";
-    if (label) button.textContent = label;
+    button.dataset.label = text.textContent ?? "";
+    if (label) text.textContent = label;
   } else if (button.dataset.label) {
-    button.textContent = button.dataset.label;
+    text.textContent = button.dataset.label;
   }
 }
 

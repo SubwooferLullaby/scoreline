@@ -58,6 +58,7 @@ export default defineConfig({
 				"!/manifest.webmanifest",
 				"!/sw.js",
 				"!/og.png",
+				"!/landing/*",
 				"!/robots.txt",
 			],
 		},
