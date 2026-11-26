@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+		<title>Scoreline: live scores, told play by play</title>
+		<meta name="description" content="Scoreline follows the games you care about and shows each one as it happens, play by play. Free. Soccer, the NFL and college football, MLB, the NBA and WNBA, Counter-Strike 2 and climbing." />
+		<meta name="color-scheme" content="light dark" />
+		<meta name="theme-color" content="#fdfdfc" media="(prefers-color-scheme: light)" />
+		<meta name="theme-color" content="#111110" media="(prefers-color-scheme: dark)" />
+		<link rel="canonical" href="https://scoreline-web.lame-o.workers.dev/" />
+		<link rel="icon" href="/icon-64.png" type="image/png" sizes="64x64" />
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content="Scoreline" />
+		<meta property="og:title" content="Scoreline" />
+		<meta property="og:description" content="Live scores, told play by play." />
+		<meta property="og:url" content="https://scoreline-web.lame-o.workers.dev/" />
+		<meta property="og:image" content="https://scoreline-web.lame-o.workers.dev/og.png" />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta property="og:image:alt" content="Scoreline. Live scores, told play by play." />
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content="Scoreline" />
+		<meta name="twitter:description" content="Live scores, told play by play." />
+		<meta name="twitter:image" content="https://scoreline-web.lame-o.workers.dev/og.png" />
+		<link rel="stylesheet" href="/pages/page.css" />
+		<script type="module" src="/src/landing/landing.ts"></script>
+	</head>
+	<body>
+		<main>
+			<header>
+				<h1>Scoreline</h1>
+				<p class="tagline">Live scores, told play by play.</p>
+			</header>
+
+			<p>Scoreline follows the games you care about and shows each one as it happens: every pitch, drive and shot in order, on a small animated field, with the score, the timeline and the box score beside it.</p>
+			<p>Soccer, the NFL and college football, MLB, the NBA and WNBA, Counter-Strike 2 and climbing.</p>
+			<p>It's free. Sign in to start.</p>
+
+			<div class="actions">
+				<button type="button" class="button primary" data-action="passkey">Sign in with a passkey</button>
+				<!-- google --><button type="button" class="button" data-action="google">Continue with Google</button><!-- /google -->
+			</div>
+			<p class="secondary"><button type="button" class="link" data-action="create">New here? Create a passkey</button></p>
+			<p class="status" data-status role="status" aria-live="polite" hidden></p>
+			<noscript><p class="status">Signing in needs JavaScript.</p></noscript>
+
+			<section aria-labelledby="whats-in-it">
+				<h2 id="whats-in-it">What's in it</h2>
+				<ul>
+					<li>Every league you follow, live, in one list.</li>
+					<li>A page for every game: the plays in order, an animated view of the field, the timeline, the box score and win probability.</li>
+					<li>Schedules, standings, brackets, and team and player pages.</li>
+					<li>Your teams and settings follow you to every device you sign in on.</li>
+					<li>An alert when your team scores, if you want one, while Scoreline is open in a tab.</li>
+				</ul>
+			</section>
+
+			<section aria-labelledby="how-it-works">
+				<h2 id="how-it-works">How it works</h2>
+				<p>Scores come from public sports feeds. A play usually reaches Scoreline within a minute of happening. Each game page runs a short delay so that plays arrive in order and never jump.</p>
+			</section>
+
+			<p><strong>Also on the Mac:</strong> a menu bar app, for Apple silicon. <a href="https://github.com/SubwooferLullaby/scoreline/releases/latest/download/Scoreline.dmg">Download</a></p>
+
+			<footer>
+				<a href="https://github.com/SubwooferLullaby/scoreline">GitHub</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a>
+			</footer>
+		</main>
+	</body>
+</html>

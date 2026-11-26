@@ -6,6 +6,7 @@
  *
  *     const board = await fetcher("https://site.api.espn.com/apis/site/v2/sports/nfl/scoreboard", { signal });
  */
+import { signInURL } from "../../shared/routes";
 import { clientRequest } from "../../shared/upstreams";
 
 export type Fetcher = (upstreamURL: string, init?: { signal?: AbortSignal }) => Promise<unknown>;
@@ -20,6 +21,20 @@ export class HTTPError extends Error {
   }
 }
 
+let leaving = false;
+
+/**
+ * The Worker's proxy answers 401 once the session is gone (signed out in
+ * another tab, expired, the account deleted): back to the landing, which
+ * returns here after signing in (shared/routes.ts `signInURL`). Only for the
+ * app's own `/api`, never a direct upstream's answer.
+ */
+export function noteUnauthorized(response: Response, href: string): void {
+  if (response.status !== 401 || !href.startsWith("/") || leaving || typeof location === "undefined") return;
+  leaving = true;
+  location.assign(signInURL(location.pathname + location.search));
+}
+
 /** Development only: a stand-in for the network (the `?demo` harness, src/data/demo.ts). */
 let override: Fetcher | null = null;
 export function setFetcherOverride(fetcher: Fetcher | null): void {
@@ -31,6 +46,7 @@ export const getJSON: Fetcher = async (upstreamURL, init) => {
   if (override) return override(upstreamURL, init);
   const { href, cache } = clientRequest(upstreamURL);
   const response = await fetch(href, { signal: init?.signal, cache, headers: { Accept: "application/json" } });
+  noteUnauthorized(response, href);
   if (!response.ok) throw new HTTPError(response.status, upstreamURL);
   return response.json() as Promise<unknown>;
 };
@@ -51,6 +67,7 @@ export const getText: TextFetcher = async (upstreamURL, init) => {
   }
   const { href, cache } = clientRequest(upstreamURL);
   const response = await fetch(href, { signal: init?.signal, cache });
+  noteUnauthorized(response, href);
   if (!response.ok) throw new HTTPError(response.status, upstreamURL);
   return response.text();
 };

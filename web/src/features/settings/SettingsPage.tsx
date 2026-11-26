@@ -23,6 +23,7 @@ import { useDocumentTitle } from "../../app/useDocumentTitle";
 import { settings, useSettings, type CelebrationLevel, type Settings, type Theme } from "../../state/settings";
 import { isSupportedTeam, teamRef } from "../../data/profiles/models";
 import { LinkOrigin, linkNameClass, TeamLink } from "../profiles/ProfileLinks";
+import { AccountSection } from "./AccountSection";
 import { Credits, KeyboardSection, NotificationsSection, SoundsRow, TabSection } from "./ShellSettings";
 import styles from "./Settings.module.css";
 
@@ -35,6 +36,8 @@ export function SettingsPage() {
     <div className={styles.page}>
       <PageHeader title="Settings" leading={<PageBack />} />
       <div className={`${styles.column} ${styles.entrance}`}>
+        <AccountSection />
+
         <FormSection title="Your Scoreline" icon="star">
           <GroupBox>
             <Link className={styles.catalogRow} to="/following"><Icon name="star" size={13} /><span className={styles.leagueName}>Following</span><Icon name="chevronRight" size={9} /></Link>

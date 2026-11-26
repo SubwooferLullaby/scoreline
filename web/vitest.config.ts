@@ -4,6 +4,10 @@ import { defineConfig } from "vitest/config";
 // Worker's proxy with the Cache API and fetch stubbed.
 // (The Cloudflare plugin is deliberately not loaded here.)
 export default defineConfig({
+	resolve: {
+		// workerd's own module, for the Worker's tests (test/worker).
+		alias: { "cloudflare:workers": new URL("./test/worker/cloudflareWorkers.ts", import.meta.url).pathname },
+	},
 	test: {
 		include: ["test/unit/**/*.test.ts", "test/worker/**/*.test.ts"],
 		environment: "node",

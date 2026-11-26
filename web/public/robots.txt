@@ -1,0 +1,10 @@
+# The public pages only: the app is behind sign-in. The pages' own stylesheet and
+# images stay crawlable so a crawler renders them as people see them.
+User-agent: *
+Allow: /$
+Allow: /privacy
+Allow: /terms
+Allow: /assets/
+Allow: /og.png
+Allow: /icon-64.png
+Disallow: /

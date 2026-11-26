@@ -549,3 +549,39 @@
 .bell:disabled {
   opacity: 0.4;
 }
+
+/* Settings → Account (AccountSection.tsx). */
+.accountActions {
+  display: flex;
+  gap: calc(6 * var(--pt));
+  flex-shrink: 0;
+}
+
+.destructive {
+  color: var(--live-text);
+}
+
+.accountError {
+  padding: calc(5 * var(--pt)) calc(16 * var(--pt)) 0;
+  font-size: var(--text-caption);
+  color: var(--live-text);
+  text-wrap: pretty;
+}
+
+.nameField {
+  width: 100%;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font: inherit;
+  font-size: max(16px, var(--text-body)); /* never below 16px: phones zoom into smaller inputs */
+  color: var(--label);
+  outline: none;
+  box-shadow: 0 1px 0 var(--accent);
+}
+
+@media (pointer: fine) {
+  .nameField {
+    font-size: var(--text-body);
+  }
+}

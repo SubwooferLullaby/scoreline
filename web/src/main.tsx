@@ -19,6 +19,9 @@ if (import.meta.env.PROD && "serviceWorker" in navigator) {
   window.addEventListener("load", () => void navigator.serviceWorker.register("/sw.js").catch(() => {}), { once: true });
 }
 
+// Your settings follow your account (state/settingsSync.ts): read after the first paint, never in its way.
+window.addEventListener("load", () => void import("./state/settingsSync").then((m) => m.startSettingsSync()), { once: true });
+
 // A page open across a deploy asks for chunks the new deploy doesn't have
 // (404s, worker/index.ts): load the new version once rather than fail. The
 // flag stops a loop if the chunk is missing for another reason.
