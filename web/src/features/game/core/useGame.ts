@@ -159,7 +159,8 @@ export function useGame(id: string, { poll, league }: { poll: boolean; league: s
   const lookup = useQuery({
     queryKey: ["game-event", id, hint?.id ?? null],
     queryFn: ({ signal }) => (csID != null ? resolveCS(csID, signal) : resolveESPN(espnID!, hint, signal)),
-    enabled: !boardEvent && (espnID != null || csID != null) && scores.status !== "loading",
+    // Asking every ESPN league waits for every board: the first to answer isn't always the game's.
+    enabled: !boardEvent && (espnID != null || csID != null) && (csID != null || hint ? scores.status !== "loading" : scores.settled),
     staleTime: Infinity,
     // Its first failure shows at once; it asks again on the retry ladder (state/retry.ts).
     ...retrying(),

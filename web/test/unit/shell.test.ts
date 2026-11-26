@@ -14,6 +14,7 @@ import { faviconScore, pinExpired, tabEvent, tabTitle } from "../../src/data/tab
 import { composeTitle } from "../../src/app/useDocumentTitle";
 import { commandFor } from "../../src/app/commands";
 import { landingOffset } from "../../src/app/scrollMemory";
+import { eventHref } from "../../src/data/gameHref";
 import { raceOf } from "../../src/features/scores/TileStrips";
 import { pickOutline, pickSections } from "../../src/data/pickOutline";
 import { stops, stopKey } from "../../src/data/outline";
@@ -355,5 +356,18 @@ describe("a quiet league's next game day", () => {
     const weekly = parseCalendar(fixture("sched-nfl-undated.json"));
     const week = nextDayAfterWindow(weekly, true, now);
     expect(week).not.toBeNull();
+  });
+});
+
+describe("a game's link", () => {
+  const at = (ref: ScoreEvent["ref"], id = "espn-401873081") => ({ id, ref }) as unknown as ScoreEvent;
+  it("carries an ESPN game's league, so a copied link opens without asking every league", () => {
+    expect(eventHref(at({ kind: "espn", path: "football/nfl", id: "401873081", sport: "football" }))).toBe("/game/espn-401873081?league=nfl");
+    expect(eventHref(at({ kind: "espn", path: "football/college-football", id: "1", sport: "football" }))).toBe("/game/espn-401873081?league=college-football");
+    expect(eventHref(at({ kind: "espn", path: "soccer/eng.league_cup", id: "1", sport: "soccer" }))).toBe("/game/espn-401873081?league=eng.league_cup");
+    expect(eventHref(at({ kind: "espn", path: "soccer/club.friendly", id: "1", sport: "soccer" }))).toBe("/game/espn-401873081?league=club.friendly");
+  });
+  it("leaves other sources' IDs as they are", () => {
+    expect(eventHref(at({ kind: "counterStrike", slug: "a-vs-b", tournament: null }, "cs-132240"))).toBe("/game/cs-132240");
   });
 });

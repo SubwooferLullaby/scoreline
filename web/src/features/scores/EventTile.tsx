@@ -9,6 +9,7 @@
  */
 import { memo, type CSSProperties } from "react";
 import { Link } from "react-router";
+import { eventHref } from "../../data/gameHref";
 import { Icon, LiveStatus, ScoreDigits, SPORT_ICON } from "../../design/components";
 import { countdown, countdownClock, clockTime, dayAndTime, dayName, enDash, isDelayed, spokenSummary, unplayed } from "../../data/format";
 import { eventSport, stepsBack, type BaseState, type Competitor, type League, type ScoreEvent, type Side } from "../../data/models";
@@ -77,7 +78,7 @@ function EventTileView(props: EventTileProps) {
   return (
     <GameMenuHost event={event} className={[styles.tileWrap, className].filter(Boolean).join(" ")} buttonClassName={styles.tileMore}>
     <Link
-      to={`/game/${encodeURIComponent(event.id)}`}
+      to={eventHref(event)}
       className={styles.tile}
       data-size={size}
       data-nav-id={event.id}
