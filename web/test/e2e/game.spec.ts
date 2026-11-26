@@ -73,3 +73,22 @@ for (const size of WIDTHS) {
     });
   }
 }
+
+/**
+ * A finished series' Game 3 (the real World Series feed): the hero and the
+ * Series module say the series as it stood after Game 3, from the games'
+ * own results, never how the series ended (ESPN's line: "TB wins 3–2").
+ */
+test.describe("1440 MLB series game", () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+
+  test("Game 3 of a finished series says the series after Game 3", async ({ page }) => {
+    await page.goto("/game/espn-401908044?league=mlb");
+    const after = /Game 3 · (\S+ leads [0-3]–[0-2]|Series tied 1–1)/;
+    const hero = page.locator('[class*="_heroWrap_"] [class*="_caption_"]').first();
+    await expect(hero).toHaveText(new RegExp(`^World Series · ${after.source}$`), { timeout: 20_000 });
+    await expect(page.locator('[data-section="bracket"]')).toContainText(after);
+    await expect(page.getByText(/wins \d–\d/)).toHaveCount(0);
+    await page.locator('[class*="_heroWrap_"]').first().screenshot({ path: join(OUT, "1440-light-mlb-series-game3.png") });
+  });
+});
