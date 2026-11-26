@@ -15,6 +15,13 @@ export default defineConfig({
 		env: {
 			// The static assets, for the Worker's `/assets/*` pass (worker/index.ts).
 			ASSETS: bindings.assets(),
+			// The app's database: accounts (Better Auth) and first-party analytics
+			// (migrations/). Bound by name; the account is chosen at deploy time.
+			DB: bindings.d1({ name: "scoreline" }),
+			// Who sees /admin: comma-separated emails and user IDs, set as secrets
+			// at deploy time (never in the repo). worker/analytics.ts `isAdmin`.
+			ADMIN_EMAILS: bindings.secret(),
+			ADMIN_USER_IDS: bindings.secret(),
 		},
 		assets: {
 			// Every app route (/game/123, /settings…) gets index.html; React Router takes it from there.

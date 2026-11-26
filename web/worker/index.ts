@@ -4,9 +4,23 @@
  * `/assets/*` (cloudflare.config.ts: `assets.runWorkerFirst`). Anything else
  * that reaches it is a 404: the asset layer already answered every app route
  * with index.html.
+ *
+ * Two `/api` paths are the app's own, ahead of the proxy: the analytics
+ * ingest (`/api/t`) and the owner's numbers (`/api/admin/stats`), both in
+ * worker/analytics.ts.
  */
+import { INGEST_PATH } from "../shared/analytics";
 import { API_PREFIX } from "../shared/upstreams";
+import { adminStats, ingest, type CurrentUser } from "./analytics";
 import { proxy } from "./proxy";
+
+/**
+ * The signed-in user. Until accounts land (worker/auth.ts' `getSession`),
+ * nobody is: the ingest keeps only signed-out events and the stats answer 401.
+ */
+async function currentUser(_request: Request, _env: Env): Promise<CurrentUser> {
+  return null;
+}
 
 const notFound = () =>
   Response.json({ error: { status: 404, message: "Not found." } }, { status: 404, headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
@@ -29,6 +43,8 @@ async function asset(request: Request, env: Env): Promise<Response> {
 export default {
   async fetch(request, env, ctx): Promise<Response> {
     const url = new URL(request.url);
+    if (url.pathname === INGEST_PATH) return ingest(request, env, ctx, await currentUser(request, env));
+    if (url.pathname === "/api/admin/stats") return adminStats(request, env, await currentUser(request, env));
     if (url.pathname.startsWith(API_PREFIX)) return proxy(request, url, ctx);
     if (url.pathname.startsWith("/assets/")) return asset(request, env);
     return notFound();
