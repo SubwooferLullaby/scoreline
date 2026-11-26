@@ -42,11 +42,17 @@ test("a header folds its module to one line, remembered; keys fold and open it",
 test("the header's menu hides a module on the sport's pages; Show brings it back", async ({ page }) => {
   await page.goto(NBA);
   await expect(header(page, "flow")).toBeVisible({ timeout: 30_000 });
-  // Once the page has assembled (a menu closes when the page under it scrolls).
   await expect(header(page, "box")).toBeVisible();
-  await page.waitForTimeout(1500);
+  // The live page moving under it (plays landing, scroll anchoring) leaves the menu open; a hand scroll closes it.
   await header(page, "flow").click({ button: "right" });
-  await page.getByRole("menuitem", { name: "Hide Game Flow on NBA Pages" }).click();
+  const hide = page.getByRole("menuitem", { name: "Hide Game Flow on NBA Pages" });
+  await expect(hide).toBeVisible();
+  await page.waitForTimeout(2000);
+  await expect(hide).toBeVisible();
+  await page.mouse.wheel(0, 120);
+  await expect(page.getByRole("menu")).toHaveCount(0);
+  await header(page, "flow").click({ button: "right" });
+  await hide.click();
   await expect(page.locator('[data-section="flow"]')).toHaveCount(0);
   await expect(page.getByText("Hidden on NBA pages: Game Flow")).toBeVisible();
   await page.getByRole("button", { name: "Show", exact: true }).click();
