@@ -6,3 +6,8 @@ BETTER_AUTH_SECRET=replace-with-the-output-of-openssl-rand-base64-32
 # Optional: "Continue with Google" appears only when both are set.
 # GOOGLE_CLIENT_ID=
 # GOOGLE_CLIENT_SECRET=
+
+# Who sees /admin. The analytics end-to-end test (test/e2e/analytics.spec.ts)
+# signs in as "e2e-admin" and reads /admin as it.
+ADMIN_EMAILS=
+ADMIN_USER_IDS=e2e-admin

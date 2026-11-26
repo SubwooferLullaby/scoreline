@@ -11,7 +11,13 @@
  *
  * Errors show inline, in plain words, in the status line. On success you go
  * to `?next=` (a same-origin path only: shared/routes.ts) or the app.
+ *
+ * The funnel (ARCHITECTURE.md, Analytics): a button pressed is `sign_in_start`
+ * with its method, a passkey account made is `sign_up` and a passkey sign-in
+ * `sign_in`, sent by beacon (it outlives the redirect). No IDs are sent from
+ * here; the Worker adds the new session's user to the last two.
  */
+import { INGEST_PATH, type EventName } from "../../shared/analytics";
 import { safeNext } from "../../shared/routes";
 import { AuthError, authErrorMessage, continueWithGoogle, createPasskey, passkeysSupported, signInWithPasskey } from "../auth/passkeys";
 
@@ -38,11 +44,22 @@ function busy(button: HTMLButtonElement | null, on: boolean, label?: string) {
   }
 }
 
+function track(name: EventName, method: string) {
+  try {
+    navigator.sendBeacon?.(INGEST_PATH, JSON.stringify({ events: [{ name, ts: Date.now(), path: "/", props: { method } }] }));
+  } catch {
+    // Counting never gets in the way of signing in.
+  }
+}
+
 async function run(button: HTMLButtonElement, label: string, action: () => Promise<void>, failure: Parameters<typeof authErrorMessage>[1]) {
   say(null);
+  const method = failure === "google" ? "google" : "passkey";
+  track("sign_in_start", method);
   busy(button, true, label);
   try {
     await action();
+    if (failure !== "google") track(failure === "create" ? "sign_up" : "sign_in", method);
     // Signed in: the page the visitor wanted (the Worker serves the app there now).
     location.replace(next);
   } catch (error) {

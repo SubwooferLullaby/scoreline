@@ -204,9 +204,11 @@ function load(): Settings {
 // MARK: - The store
 
 type Listener = () => void;
+type ChangeListener = (before: Settings, after: Settings) => void;
 let current: Settings = load();
 const listeners = new Set<Listener>();
 const localListeners = new Set<Listener>();
+const changeListeners = new Set<ChangeListener>();
 
 function emit() {
   for (const listener of listeners) listener();
@@ -223,9 +225,11 @@ function store(next: Settings) {
 
 function commit(next: Settings) {
   if (next === current) return;
+  const before = current;
   store(next);
   emit();
   for (const listener of localListeners) listener();
+  for (const listener of changeListeners) listener(before, next);
 }
 
 /**
@@ -247,6 +251,12 @@ export function subscribeLocalChanges(listener: Listener): () => void {
 export function adoptSettings(raw: unknown): void {
   store(sanitize(raw));
   emit();
+}
+
+/** This tab's own changes, before and after (another tab's arrive through `storage` and aren't told here): the analytics' setting events. */
+export function subscribeSettingChanges(listener: ChangeListener): () => void {
+  changeListeners.add(listener);
+  return () => changeListeners.delete(listener);
 }
 
 function update(change: (s: Settings) => Partial<Settings>) {

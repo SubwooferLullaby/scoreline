@@ -68,7 +68,7 @@ Keep it this short, and don't add hype.
 
 - [x] Accounts: D1, Better Auth, passkeys, the gate, Settings → Account, settings sync
 - [x] Landing, privacy and terms pages, Open Graph image, robots.txt
-- [ ] First-party analytics, `/admin`, `pnpm stats`
+- [x] First-party analytics, `/admin`, `pnpm stats`
 - [ ] Hardening: headers, rate limits, error reporting (headers and rate limits done; error reporting to do)
 - [ ] QA of every page type at 390, 1024 and 1440 in light and dark, on live data
 - [x] Mac and web split, planned: [MAC-WEB-SPLIT.md](MAC-WEB-SPLIT.md)

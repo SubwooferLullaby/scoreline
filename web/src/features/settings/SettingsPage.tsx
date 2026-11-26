@@ -25,6 +25,7 @@ import { isSupportedTeam, teamRef } from "../../data/profiles/models";
 import { LinkOrigin, linkNameClass, TeamLink } from "../profiles/ProfileLinks";
 import { AccountSection } from "./AccountSection";
 import { Credits, KeyboardSection, NotificationsSection, SoundsRow, TabSection } from "./ShellSettings";
+import { AdminLink } from "../admin/AdminLink";
 import styles from "./Settings.module.css";
 
 const all = (s: Settings) => s;
@@ -108,6 +109,7 @@ export function SettingsPage() {
         <NotificationsSection />
 
         <KeyboardSection />
+        <AdminLink />
         <Credits />
       </div>
     </div>

@@ -6,16 +6,22 @@
  * - `/api/auth/*`: Better Auth (worker/auth.ts), behind AUTH_LIMITER per
  *   client, and only the endpoints the landing and Settings use.
  * - `/api/me*`: the signed-in account and its synced settings (worker/me.ts).
+ * - `/api/t` and `/api/admin/stats`: the analytics ingest and the owner's
+ *   numbers (worker/analytics.ts). The ingest takes signed-out events too
+ *   (the landing's); the stats are for admins only.
  * - `/api/*`: the proxy (worker/proxy.ts), for a session only (401 JSON
  *   without one, while `REQUIRE_SIGN_IN` is on), behind API_LIMITER per
  *   session, through the cached `Proxy` entrypoint.
  * - `/assets/*`: the hashed bundles, or a 404 (never index.html).
  * - Pages: the gate (worker/gate.ts) picks the landing, the app's shell, a
  *   public page, a redirect to the landing or the plain 404 (worker/pages.ts).
+ *   A landing served to a visitor is counted (`recordLandingView`).
  */
 import { WorkerEntrypoint } from "cloudflare:workers";
+import { INGEST_PATH } from "../shared/analytics";
 import { safeNext } from "../shared/routes";
 import { API_PREFIX } from "../shared/upstreams";
+import { adminStats, ingest, recordLandingView, type CurrentUser } from "./analytics";
 import { getAuth, getSession, requireSignIn, withCookies, type SignedIn } from "./auth";
 import { decide, needsSession } from "./gate";
 import { problem } from "./headers";
@@ -42,6 +48,12 @@ export const AUTH_ENDPOINTS: ReadonlySet<string> = new Set([
 
 /** Session reads are frequent and cheap; everything else counts against the client's auth limit. */
 const UNLIMITED_AUTH = new Set(["/get-session"]);
+
+/** Who is asking, for the analytics: the session's user (the end-to-end harness's stand-in too, which exists only under `pnpm dev`). */
+async function currentUser(request: Request, env: Env): Promise<CurrentUser> {
+  const signedIn = await getSession(request, env);
+  return signedIn ? { id: signedIn.user.id, email: signedIn.user.email, emailVerified: signedIn.user.emailVerified } : null;
+}
 
 /**
  * A hashed bundle, or a 404. The asset layer answers a file it doesn't have
@@ -101,7 +113,7 @@ async function api(request: Request, env: Env, ctx: ExecutionContext, url: URL):
   return withCookies(response, signedIn?.headers);
 }
 
-async function page(request: Request, env: Env, url: URL, dev: boolean): Promise<Response> {
+async function page(request: Request, env: Env, ctx: ExecutionContext, url: URL, dev: boolean): Promise<Response> {
   if (request.method !== "GET" && request.method !== "HEAD") return problem(405, "Only GET and HEAD.", { Allow: "GET, HEAD" });
   const signedIn = needsSession(url.pathname, dev) ? await getSession(request, env) : null;
   const decision = decide({ pathname: url.pathname, search: url.search, signedIn: signedIn != null, requireSignIn: requireSignIn(env), dev });
@@ -110,6 +122,7 @@ async function page(request: Request, env: Env, url: URL, dev: boolean): Promise
     case "app":
       return appShell(env, request, dev, cookies);
     case "landing":
+      if (request.method === "GET") recordLandingView(request, env, ctx);
       return staticPage(env, request, "landing", dev);
     case "page":
       return staticPage(env, request, decision.page, dev, cookies);
@@ -140,9 +153,11 @@ export async function handle(request: Request, env: Env, ctx: ExecutionContext, 
   const path = url.pathname;
   if (path === "/api/auth" || path.startsWith("/api/auth/")) return auth(request, env, path);
   if (path === "/api/me" || path.startsWith("/api/me/")) return me(request, env, path);
+  if (path === INGEST_PATH) return ingest(request, env, ctx, await currentUser(request, env));
+  if (path === "/api/admin/stats") return adminStats(request, env, await currentUser(request, env));
   if (path.startsWith(API_PREFIX)) return api(request, env, ctx, url);
   if (path.startsWith("/assets/")) return asset(request, env);
-  return page(request, env, url, dev);
+  return page(request, env, ctx, url, dev);
 }
 
 export default {

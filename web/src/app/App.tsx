@@ -9,6 +9,7 @@
  *   /results/climbing/:event/:dcat, /results/tournament/:slug   results deeper than a row
  *   /standings/:league      tables; /rankings/:league polls; /bracket/:league/:id brackets
  *   /team/:id, /player/:id  team and player pages (features/profiles; `teamHref`, `playerHref`)
+ *   /admin                  the owner's numbers (features/admin), for admins only
  *   /dev/theater            development only: the play theater's preview (/football, /soccer, /basketball: theirs; `?t=` freezes; /names: the names harness;
  *                           /flow: the play flow harness; /directed: a theater on the engine, live on a recording)
  *   /dev/odds               development only: Win Probability with Polymarket on recorded games (`?game=nba|soccer&state=live`)
@@ -16,6 +17,7 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { LazyMotion, MotionConfig } from "motion/react";
 import { createBrowserRouter, RouterProvider } from "react-router";
+import { trackRoutes } from "../state/analytics";
 import { queryClient } from "../state/scores";
 import { useApplyShapes, useApplyTheme } from "../state/theme";
 import { AppShell, ShellFrame } from "./AppShell";
@@ -49,6 +51,8 @@ const router = createBrowserRouter([
       { path: "bracket/:league/:id", lazy: () => import("../features/brackets/BracketPage").then((m) => ({ Component: m.BracketPage })) },
       { path: "team/:id", lazy: () => import("../features/profiles/TeamPage").then((m) => ({ Component: m.TeamPage })) },
       { path: "player/:id", lazy: () => import("../features/profiles/PlayerPage").then((m) => ({ Component: m.PlayerPage })) },
+      // The owner's numbers (worker/analytics.ts); linked from Settings only for admins.
+      { path: "admin", lazy: () => import("../features/admin/AdminPage").then((m) => ({ Component: m.AdminPage })) },
       // Development only: the play theater on recorded World Series plays (the render harness).
       ...(import.meta.env.DEV
         ? [
@@ -70,6 +74,9 @@ const router = createBrowserRouter([
     ],
   },
 ]);
+
+// A page view for each page settled on, by its route pattern (state/analytics.ts).
+trackRoutes(router);
 
 const loadMotionFeatures = () => import("../design/motion-features").then((m) => m.default);
 

@@ -17,7 +17,7 @@ export default defineConfig({
 		env: {
 			// The static assets: the app's index.html, the landing and legal pages, the hashed bundles.
 			ASSETS: bindings.assets(),
-			// Accounts, sessions, passkeys and synced settings (migrations/). Created by
+			// Accounts, sessions, passkeys, synced settings and first-party analytics (migrations/). Created by
 			// name on the owner's personal account; deploy resolves the name.
 			DB: bindings.d1({ name: "scoreline" }),
 			// Signs session cookies and the cookie cache. `cf workers secrets update BETTER_AUTH_SECRET`;
@@ -32,6 +32,10 @@ export default defineConfig({
 			// Namespace IDs are the account's own numbers for these two limiters.
 			API_LIMITER: bindings.rateLimit({ namespace: "7301", simple: { limit: 600, period: 60 } }),
 			AUTH_LIMITER: bindings.rateLimit({ namespace: "7302", simple: { limit: 30, period: 60 } }),
+			// Who sees /admin: comma-separated emails and user IDs, set as secrets
+			// at deploy time (never in the repo). worker/analytics.ts `isAdmin`.
+			ADMIN_EMAILS: bindings.secret(),
+			ADMIN_USER_IDS: bindings.secret(),
 		},
 		assets: {
 			// Every app route (/game/123, /settings…) gets index.html; React Router takes it from there.

@@ -40,6 +40,8 @@ export interface SignedInUser {
   readonly name: string;
   /** Null for a passkey account. */
   readonly email: string | null;
+  /** Google's emails are verified; a passkey account has none. `/admin` trusts only a verified email. */
+  readonly emailVerified: boolean;
   readonly image: string | null;
 }
 
@@ -162,15 +164,19 @@ export const DEV_SESSION_COOKIE = "scoreline_dev_session";
  * development (`import.meta.env.DEV`, false in every production bundle, so
  * this returns before reading anything), the request is to localhost, and it
  * carries the harness's cookie. It opens the gate and the proxy; it is never
- * an account (/api/me answers 401, and nothing is written for it).
+ * an account (/api/me answers 401). The cookie's value, when it's an id
+ * (letters, digits, dashes), is the user's id, so the analytics specs can be
+ * a known user ("e2e-admin"); otherwise the id is "dev-harness".
  */
 export function devSession(request: Request, dev = import.meta.env.DEV): SignedIn | null {
   if (!dev) return null;
   const host = new URL(request.url).hostname;
   if (host !== "localhost" && host !== "127.0.0.1") return null;
-  if (!readCookie(request, DEV_SESSION_COOKIE)) return null;
+  const value = readCookie(request, DEV_SESSION_COOKIE);
+  if (!value) return null;
+  const id = /^[A-Za-z][\w-]{1,39}$/.test(value) ? value : "dev-harness";
   return {
-    user: { id: "dev-harness", name: ACCOUNT_NAME, email: null, image: null },
+    user: { id, name: ACCOUNT_NAME, email: null, emailVerified: false, image: null },
     session: { id: "dev-harness", expiresAt: new Date(Date.now() + 3_600_000) },
     headers: new Headers(),
     bypass: true,
@@ -211,6 +217,8 @@ export async function getSession(request: Request, env: Env): Promise<SignedIn |
         id: user.id,
         name: user.name || ACCOUNT_NAME,
         email: user.email && !user.email.endsWith(`@${PLACEHOLDER_EMAIL_DOMAIN}`) ? user.email : null,
+        // In the row (Better Auth's core field), though this plugin set's inferred user type leaves it out.
+        emailVerified: (user as { emailVerified?: unknown }).emailVerified === true,
         image: user.image ?? null,
       },
       session: { id: session.id, expiresAt: new Date(session.expiresAt) },

@@ -6,6 +6,11 @@ import { createRoot } from "react-dom/client";
 import "./design/tokens.css";
 import "./design/base.css";
 import { App } from "./app/App";
+import { startAnalytics } from "./state/analytics";
+
+// First-party analytics (state/analytics.ts), before the app renders. What
+// was tracked as the modules loaded (the first page view) waits in its queue.
+startAnalytics();
 
 // Development only: `/?demo` replays fixtures with live games (src/data/demo.ts).
 if (import.meta.env.DEV) {
