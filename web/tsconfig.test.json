@@ -7,5 +7,5 @@
 		"jsx": "react-jsx",
 		"types": ["node", "vite/client"]
 	},
-	"include": ["test/unit", "src", "shared"]
+	"include": ["test/unit", "src", "shared", "worker/headers.ts"]
 }

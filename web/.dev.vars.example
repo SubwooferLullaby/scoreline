@@ -1,0 +1,8 @@
+# Local secrets for `pnpm dev`: copy to .dev.vars (gitignored) to use your own.
+# Without it, development signs sessions with a fixed development-only secret
+# (worker/auth.ts); production refuses to start auth without the real one.
+BETTER_AUTH_SECRET=replace-with-the-output-of-openssl-rand-base64-32
+
+# Optional: "Continue with Google" appears only when both are set.
+# GOOGLE_CLIENT_ID=
+# GOOGLE_CLIENT_SECRET=
