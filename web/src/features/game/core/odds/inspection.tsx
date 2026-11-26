@@ -148,7 +148,9 @@ export class PresentedTime {
     this.timer = null;
     const clock = this.clock;
     const now = Date.now();
-    const until = clock ? clock.p(now / 1000) * 1000 : null;
+    // An unstarted clock is no broadcast yet (null), never −∞.
+    const p = clock?.presented(now / 1000) ?? null;
+    const until = p != null ? p * 1000 : null;
     if (until !== this.until) {
       this.until = until;
       for (const l of [...this.listeners]) l();

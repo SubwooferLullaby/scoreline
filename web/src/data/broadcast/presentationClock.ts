@@ -199,6 +199,19 @@ export class PresentationClock {
     return piece ? piece.p(t) : -Infinity;
   }
 
+  /**
+   * The moment presented at wall time `t`, finite or null: null while the clock
+   * has no plan yet (unstarted, p is −∞), so a page reads it as "no broadcast
+   * yet" and shows as it would without one. A live soccer page sits there until
+   * the core plays' first look arrives; read raw, −∞ made the timeline's minute
+   * NaN and an invalid date crashed Win Probability (the Mac's 1.0.33 crash,
+   * docs/MAC-WEB-SPLIT.md; PresentationClock.swift `presentedDate`, its patch).
+   */
+  presented(t: PTime): PTime | null {
+    const p = this.p(t);
+    return Number.isFinite(p) ? p : null;
+  }
+
   /** The clock's rate at `t` (1: real time, 0: holding). */
   rate(t: PTime): number {
     return this.piece(t)?.v(t) ?? 0;
