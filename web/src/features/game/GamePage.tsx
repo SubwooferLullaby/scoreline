@@ -47,6 +47,8 @@ import { ScoringSlideHost, SlidesProvider, useBindSlides, useScoringSlides, useS
 import { listenForUnlock } from "./core/sound";
 import { soundsEnabled } from "../../data/celebrationSound";
 import { useSettings } from "../../state/settings";
+import { track } from "../../state/analytics";
+import { leagueWithID } from "../../data/leagues";
 import { usePresentedEvent } from "../../state/presented";
 import { BroadcastProvider, behindLiveSpoken, usePageBroadcast } from "./core/broadcast";
 import type { GameContext, SportPage } from "./core/sport";
@@ -73,6 +75,17 @@ export function GamePage() {
   const presented = usePresentedEvent();
   const titled = presented && presented.id === event?.id ? presented : event;
   useDocumentTitle(titled ? statusLineShort(titled) : null);
+  // Analytics: a game opened, by its league and sport (never its ID), once it's known.
+  // Once per game shown: not per poll, nor twice under StrictMode.
+  const opened = useRef<string | null>(null);
+  useEffect(() => {
+    if (!event || opened.current === event.id) return;
+    opened.current = event.id;
+    const league = game.leagueID ? leagueWithID(game.leagueID) : undefined;
+    const ref = event.ref;
+    const sport = league?.sport ?? (ref?.kind === "espn" ? ref.sport : ref?.kind === "counterStrike" ? "esports" : ref?.kind === "climbing" ? "climbing" : undefined);
+    track("game_open", sport ? { sport } : undefined, league?.id);
+  }, [event, game.leagueID]);
 
   const header = (
     <PageHeader

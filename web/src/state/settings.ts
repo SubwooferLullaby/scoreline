@@ -204,8 +204,10 @@ function load(): Settings {
 // MARK: - The store
 
 type Listener = () => void;
+type ChangeListener = (before: Settings, after: Settings) => void;
 let current: Settings = load();
 const listeners = new Set<Listener>();
+const changeListeners = new Set<ChangeListener>();
 
 function emit() {
   for (const listener of listeners) listener();
@@ -213,13 +215,21 @@ function emit() {
 
 function commit(next: Settings) {
   if (next === current) return;
+  const before = current;
   current = next;
   try {
     globalThis.localStorage?.setItem(STORAGE_KEY, JSON.stringify(next));
   } catch {
     // Storage full or blocked: the change still holds for this session.
   }
+  for (const listener of changeListeners) listener(before, next);
   emit();
+}
+
+/** This tab's own changes, before and after (another tab's arrive through `storage` and aren't told here): the analytics' setting events. */
+export function subscribeSettingChanges(listener: ChangeListener): () => void {
+  changeListeners.add(listener);
+  return () => changeListeners.delete(listener);
 }
 
 function update(change: (s: Settings) => Partial<Settings>) {
