@@ -128,6 +128,14 @@ describe("the summary", () => {
     expect(new Set(moments.map((m) => m.id)).size).toBe(moments.length);
   });
 
+  it("lists a run where its last basket was, even one that ran to the buzzer or through a break", () => {
+    const basket = (id: string, period: number, clock: string, away: number, home: number) => ({ id, period: { number: period }, clock: { displayValue: clock }, scoringPlay: true, awayScore: away, homeScore: home, text: "makes" });
+    const end = (id: string, period: number, final = false) => ({ id, period: { number: period }, clock: { displayValue: "0.0" }, type: final ? { id: "402", text: "End Game" } : { id: "412", text: "End Period" } });
+    const plays = [basket("1", 1, "1:00", 0, 2), basket("2", 1, "0:30", 0, 10), end("3", 1), basket("4", 2, "11:00", 2, 10), basket("5", 4, "0:40", 2, 13), basket("6", 4, "0:02", 2, 21), end("7", 4), end("8", 4, true)];
+    const texts = keyMoments({ plays } as never, side, false).map((m) => m.text);
+    expect(texts).toEqual(["10–0 run", "End of Q1", "11–0 run", "Final"]);
+  });
+
   it("reads the latest plays newest first, tidied", () => {
     const latest = recentPlays(summary.plays);
     expect(latest).toHaveLength(4);
