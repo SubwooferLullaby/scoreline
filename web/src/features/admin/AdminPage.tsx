@@ -9,7 +9,7 @@
  * CSS, in the design system's forms.
  */
 import { useEffect, useState } from "react";
-import type { DayCount, KeyCount, Stats } from "../../../shared/stats";
+import { utcDay, type DayCount, type KeyCount, type Stats } from "../../../shared/stats";
 import { Button, EmptyState, ErrorState, FormSection, GroupBox, PageHeader, Skeleton } from "../../design/components";
 import { PageBack } from "../../app/PageBack";
 import { useDocumentTitle } from "../../app/useDocumentTitle";
@@ -73,6 +73,7 @@ function Loading() {
 
 function Report({ stats }: { readonly stats: Stats }) {
   const { totals, retention } = stats;
+  const now = Date.parse(stats.generatedAt);
   return (
     <div className={`${styles.column} ${styles.entrance}`}>
       <div className={styles.tiles}>
@@ -130,8 +131,9 @@ function Report({ stats }: { readonly stats: Stats }) {
                   <tr key={c.day}>
                     <th scope="row">{dayLabel(c.day)}</th>
                     <td>{count.format(c.users)}</td>
-                    <td>{percent(c.d1 / c.users)}</td>
-                    <td>{percent(c.d7 / c.users)}</td>
+                    {/* A cohort too young to tell shows a dash, not 0%. */}
+                    <td>{percent(c.day <= utcDay(now, -1) ? c.d1 / c.users : null)}</td>
+                    <td>{percent(c.day <= utcDay(now, -7) ? c.d7 / c.users : null)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -140,7 +142,7 @@ function Report({ stats }: { readonly stats: Stats }) {
         )}
       </FormSection>
 
-      <FormSection title="Client Errors" icon="warning" caption="The last 7 days, by count. The same message at the same frame counts once per occurrence.">
+      <FormSection title="Client Errors" icon="warning" caption="The last 7 days, most frequent first. Each row is one message at one place in the code.">
         {stats.errors.length === 0 ? (
           <p className={styles.hint}>No errors reported</p>
         ) : (

@@ -14,11 +14,21 @@ import { API_PREFIX } from "../shared/upstreams";
 import { adminStats, ingest, type CurrentUser } from "./analytics";
 import { proxy } from "./proxy";
 
+/** Vite's dev server only (`pnpm dev`): false in every build, so what it guards is compiled out. */
+const DEV = (import.meta as { env?: { DEV?: boolean } }).env?.DEV === true;
+
 /**
  * The signed-in user. Until accounts land (worker/auth.ts' `getSession`),
  * nobody is: the ingest keeps only signed-out events and the stats answer 401.
+ * Under `pnpm dev` alone, a `scoreline_dev_user=<id>` cookie stands in for a
+ * session, so the end-to-end tests (test/e2e/analytics.spec.ts) can be
+ * signed in. It never exists in a deployed Worker.
  */
-async function currentUser(_request: Request, _env: Env): Promise<CurrentUser> {
+async function currentUser(request: Request, _env: Env): Promise<CurrentUser> {
+  if (DEV) {
+    const id = /(?:^|;\s*)scoreline_dev_user=([\w-]{1,40})/.exec(request.headers.get("Cookie") ?? "")?.[1];
+    if (id) return { id, email: null };
+  }
   return null;
 }
 

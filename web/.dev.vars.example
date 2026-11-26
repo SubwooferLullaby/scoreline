@@ -1,0 +1,5 @@
+# Copy to .dev.vars (never committed) for `pnpm dev`. The analytics end-to-end
+# test (test/e2e/analytics.spec.ts) signs in as "e2e-admin" through the dev
+# server's stand-in cookie and reads /admin as it.
+ADMIN_EMAILS=
+ADMIN_USER_IDS=e2e-admin

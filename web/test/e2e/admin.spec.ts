@@ -67,7 +67,8 @@ for (const size of [{ width: 390, height: 844 }, { width: 1440, height: 900 }]) 
         await page.getByText("TypeError: Cannot read properties", { exact: false }).first().click();
         await expect(page.getByText("at parse (", { exact: false })).toBeVisible();
         await page.screenshot({ animations: "disabled", fullPage: true, path: join(out, `admin-${size.width}-${colorScheme}.png`) });
-        const axe = await new AxeBuilder({ page }).analyze();
+        // The page itself (the sidebar's live rows are qa.spec's).
+        const axe = await new AxeBuilder({ page }).include("main").withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
         expect(axe.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
         expect(errors).toEqual([]);
       });
