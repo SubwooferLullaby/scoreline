@@ -1,10 +1,13 @@
 /**
  * The public pages and a real account, signed out to deleted: the landing,
- * privacy and terms at 390 and 1440 in light and dark (no horizontal scroll,
- * axe at zero), then sign-up with a passkey (Chromium's virtual
- * authenticator over CDP, `WebAuthn.addVirtualAuthenticator`), landing on
- * `next`, Settings → Account showing the passkey, Sign Out, signing back in,
- * and Delete Account.
+ * privacy, terms and 404 at 390 and 1440 in light and dark (no horizontal
+ * scroll, axe at zero), then the gate (an app route sends you to
+ * `/?next=`, `/api` answers 401), sign-up with a passkey (Chromium's virtual
+ * authenticator over CDP, `WebAuthn.addVirtualAuthenticator`) landing on
+ * `next`, Settings → Account, a game page, Sign Out, signing back in,
+ * settings sync across two browser contexts, and Delete Account, with no
+ * CSP violation anywhere. Run it against the production preview too
+ * (ARCHITECTURE.md, Testing), where the CSP is on.
  *
  * Runs with no stand-in session (playwright.config.ts gives every other spec
  * one): these visits are signed out until they sign in.
@@ -80,14 +83,32 @@ for (const size of WIDTHS) {
 async function virtualAuthenticator(context: BrowserContext, page: Page) {
   const cdp = await context.newCDPSession(page);
   await cdp.send("WebAuthn.enable");
-  await cdp.send("WebAuthn.addVirtualAuthenticator", {
+  const { authenticatorId } = await cdp.send("WebAuthn.addVirtualAuthenticator", {
     options: { protocol: "ctap2", transport: "internal", hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true },
   });
+  const credentials = async () => (await cdp.send("WebAuthn.getCredentials", { authenticatorId })).credentials;
+  return {
+    credentials,
+    add: async (credential: Awaited<ReturnType<typeof credentials>>[number]) => {
+      await cdp.send("WebAuthn.addCredential", { authenticatorId, credential });
+    },
+  };
 }
 
-test("a passkey account from sign-up to deletion", async ({ context, page }) => {
-  test.setTimeout(120_000);
-  await virtualAuthenticator(context, page);
+/** Content-Security-Policy violations on a page (Chromium reports each as a console error). */
+function watchCSP(page: Page): string[] {
+  const violations: string[] = [];
+  page.on("console", (m) => /Content Security Policy|Refused to/i.test(m.text()) && violations.push(`${page.url()}: ${m.text()}`));
+  return violations;
+}
+
+/** The settings this device holds (the store's own key, src/state/settings.ts). */
+const storedTheme = (page: Page) => page.evaluate(() => (JSON.parse(localStorage.getItem("scoreline.settings.v1") ?? "{}") as { theme?: string }).theme ?? null);
+
+test("a passkey account from sign-up to deletion", async ({ browser, context, page }) => {
+  test.setTimeout(180_000);
+  const authenticator = await virtualAuthenticator(context, page);
+  const csp = watchCSP(page);
 
   // Signed out, an app route sends you to the landing, which remembers it.
   await page.goto("/settings");
@@ -110,7 +131,19 @@ test("a passkey account from sign-up to deletion", async ({ context, page }) => 
   await expect(passkeys.getByText("Test Key")).toBeVisible();
   await page.screenshot({ path: join(OUT, "account-settings.png"), fullPage: false });
 
+  // Signed in, /api answers, and a game page loads under the CSP.
+  expect((await page.request.get("/api/site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard")).status()).toBe(200);
+  await page.goto("/");
+  await page.waitForFunction(() => document.querySelectorAll("[data-nav-id]").length > 0 || document.querySelector('[role="alert"]') != null, null, { timeout: 30_000 });
+  const game = page.locator('a[href^="/game/"]').first();
+  if (await game.count()) await game.click();
+  else await page.goto("/game/espn-401908044");
+  await expect(page).toHaveURL(/\/game\//);
+  await page.waitForLoadState("networkidle").catch(() => {});
+  await page.waitForTimeout(1_500);
+
   // Sign Out: back to the landing, and the app is closed again.
+  await page.goto("/settings");
   await account.getByRole("button", { name: "Sign Out" }).click();
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole("button", { name: "Sign in with a passkey" })).toBeVisible();
@@ -120,6 +153,27 @@ test("a passkey account from sign-up to deletion", async ({ context, page }) => 
   // Sign in with the passkey: back to the page you asked for.
   await page.getByRole("button", { name: "Sign in with a passkey" }).click();
   await expect(page).toHaveURL(/\/following$/);
+
+  // Settings follow the account: a change here reaches a second browser, and its change comes back.
+  // (After the last sign-in here: the cloned passkey's signature counter moves on in the other browser.)
+  await page.goto("/settings");
+  await page.getByRole("radio", { name: "Dark" }).click();
+  await expect.poll(() => storedTheme(page)).toBe("dark");
+  await page.waitForTimeout(3_000); // the 2 s debounce, then the PUT
+  const other = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+  const second = await other.newPage();
+  const secondAuthenticator = await virtualAuthenticator(other, second);
+  for (const credential of await authenticator.credentials()) await secondAuthenticator.add(credential);
+  await second.goto("/settings");
+  await second.getByRole("button", { name: "Sign in with a passkey" }).click();
+  await expect(second).toHaveURL(/\/settings$/);
+  await expect.poll(() => storedTheme(second), { timeout: 15_000 }).toBe("dark");
+  await expect(second.locator("html")).toHaveAttribute("data-theme", "dark");
+  await second.getByRole("radio", { name: "Light" }).click();
+  await second.waitForTimeout(3_000);
+  await other.close();
+  await page.reload();
+  await expect.poll(() => storedTheme(page), { timeout: 15_000 }).toBe("light");
 
   // Delete Account, behind a confirmation.
   await page.goto("/settings");
@@ -137,4 +191,7 @@ test("a passkey account from sign-up to deletion", async ({ context, page }) => 
   await expect(page).toHaveURL(/\/$/);
   await page.goto("/settings");
   await expect(page).toHaveURL(/\/\?next=%2Fsettings$/);
+
+  // The landing, a game page and Settings all ran under the CSP without a violation.
+  expect(csp).toEqual([]);
 });
