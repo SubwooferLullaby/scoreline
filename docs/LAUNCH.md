@@ -62,8 +62,13 @@ Keep it this short, and don't add hype.
 
 ## Owner steps
 
-1. **Register `scoreline.fyi`** in the Cloudflare dashboard (Domain Registration → Register Domains) on the personal account. The CLI can't: the account has no registrant contact or billing profile yet, and the registrar needs both.
-2. **Then move the site:** add `domains: ["scoreline.fyi"]` to `worker` in `web/cloudflare.config.ts`, set `SITE_URL` to `https://scoreline.fyi`, deploy, and change the Google consent screen's home page, privacy and terms links to the new domain. The OAuth client already lists both callback URLs. Passkeys made on workers.dev don't work on the new domain, so anyone with one makes a new account.
+None open. Done on 2026-11-26:
+
+1. `scoreline.fyi` registered on the personal account (auto-renew on), served by the Worker as a custom domain along with `www`. workers.dev stays on (`workersDev: true`) and answers a 301 to the domain.
+2. Google: the consent screen's links point at the domain, its brand is verified (Search Console owns `scoreline.fyi` through a DNS TXT record, which must stay), and the OAuth client's only callback is `https://scoreline.fyi/api/auth/callback/google`.
+3. Cloudflare turned on Web Analytics for the new zone by itself, which injects a third-party beacon into every page (and breaks the CSP). It was removed (`cf rum site-info delete`). If a beacon from `static.cloudflareinsights.com` ever shows up again, delete the site the same way.
+
+Passkeys made on workers.dev don't work on the domain, so anyone with one makes a new account.
 
 ## Checklist
 
@@ -74,4 +79,4 @@ Keep it this short, and don't add hype.
 - [ ] QA of every page type at 390, 1024 and 1440 in light and dark, on live data
 - [x] Mac and web split, planned: [MAC-WEB-SPLIT.md](MAC-WEB-SPLIT.md)
 - [x] Deploy, then check production signed out and signed in (passkeys by `landing.spec.ts` against production; Google by hand in the owner's browser)
-- [ ] Move to `scoreline.fyi` (Owner steps 1 and 2)
+- [x] Move to `scoreline.fyi`, checked signed out and signed in (`landing.spec.ts` against https://scoreline.fyi, Google by hand)

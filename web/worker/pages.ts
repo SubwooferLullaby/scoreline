@@ -14,7 +14,7 @@ import { authMethods, siteOrigin } from "./auth";
 import { htmlResponse } from "./headers";
 
 /** The origin the pages' canonical, Open Graph and Twitter URLs are written with. */
-export const DEFAULT_ORIGIN = "https://scoreline-web.lame-o.workers.dev";
+export const DEFAULT_ORIGIN = "https://scoreline.fyi";
 
 export type StaticPage = "landing" | "privacy" | "terms" | "not-found";
 

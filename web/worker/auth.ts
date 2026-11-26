@@ -63,11 +63,16 @@ export function authMethods(env: Env): AuthMethods {
   return { passkey: true, google: Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET) };
 }
 
-/** The site's origin: `SITE_URL`, else the request's. No trailing slash. */
+/** The site's origin: `SITE_URL`, else the request's (always the request's on localhost, so development runs as is). No trailing slash. */
 export function siteOrigin(request: Request, env: Env): string {
+  const own = new URL(request.url);
   const configured = (env.SITE_URL ?? "").trim();
-  if (configured) return new URL(configured).origin;
-  return new URL(request.url).origin;
+  if (configured && !isLocalhost(own.hostname)) return new URL(configured).origin;
+  return own.origin;
+}
+
+export function isLocalhost(hostname: string): boolean {
+  return hostname === "localhost" || hostname === "127.0.0.1";
 }
 
 export function requireSignIn(env: Env): boolean {

@@ -9,7 +9,7 @@ Some details can't live in a public repo: account IDs, history that must never b
 ## What it is
 
 - **Mac app:** a macOS menu bar app in Swift (SwiftUI and AppKit). It builds with plain `swiftc`: no Xcode project and no SwiftPM.
-- **Web twin:** `web/`, React + Vite on Cloudflare Workers, live at https://scoreline-web.lame-o.workers.dev.
+- **Web twin:** `web/`, React + Vite on Cloudflare Workers, live at https://scoreline.fyi.
 - **Sports:**
   - soccer
   - NFL and college football

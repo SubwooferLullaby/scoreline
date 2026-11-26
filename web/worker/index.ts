@@ -23,7 +23,7 @@ import { INGEST_PATH } from "../shared/analytics";
 import { safeNext } from "../shared/routes";
 import { API_PREFIX } from "../shared/upstreams";
 import { adminStats, ingest, recordLandingView, type CurrentUser } from "./analytics";
-import { getAuth, getSession, requireSignIn, withCookies, type SignedIn } from "./auth";
+import { getAuth, getSession, isLocalhost, requireSignIn, withCookies, type SignedIn } from "./auth";
 import { decide, needsSession } from "./gate";
 import { problem } from "./headers";
 import { guardPasskeyRemoval, me } from "./me";
@@ -157,7 +157,7 @@ export function elsewhere(url: URL, env: Env): string | null {
   const configured = (env.SITE_URL ?? "").trim();
   if (!configured) return null;
   const site = new URL(configured);
-  if (url.origin === site.origin || url.hostname === "localhost" || url.hostname === "127.0.0.1") return null;
+  if (url.origin === site.origin || isLocalhost(url.hostname)) return null;
   return `${site.origin}${url.pathname}${url.search}`;
 }
 

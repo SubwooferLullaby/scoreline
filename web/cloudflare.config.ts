@@ -14,6 +14,10 @@ export default defineConfig({
 		compatibilityDate: "2026-10-26",
 		compatibilityFlags: ["nodejs_compat"],
 		entrypoint,
+		// On the owner's personal account's zone (Cloudflare Registrar). www redirects to the apex.
+		domains: ["scoreline.fyi", "www.scoreline.fyi"],
+		// The old address stays up so its links still work: it answers a 301 to SITE_URL.
+		workersDev: true,
 		env: {
 			// The static assets: the app's index.html, the landing and legal pages, the hashed bundles.
 			ASSETS: bindings.assets(),
@@ -25,9 +29,9 @@ export default defineConfig({
 			BETTER_AUTH_SECRET: bindings.secret(),
 			// "on": the app is behind sign-in (docs/LAUNCH.md). "off": anyone gets the app.
 			REQUIRE_SIGN_IN: bindings.text("on"),
-			// The site's origin ("https://scoreline.example"). Empty: the request's own
-			// origin, so workers.dev and localhost both work. Set it with a custom domain.
-			SITE_URL: bindings.text(""),
+			// The site's origin. Every other host (workers.dev, www) answers a 301 here
+			// (worker/index.ts `elsewhere`); localhost is exempt, so development runs as is.
+			SITE_URL: bindings.text("https://scoreline.fyi"),
 			// Per session on /api/* (the app polls: generous), and per client on /api/auth/*.
 			// Namespace IDs are the account's own numbers for these two limiters.
 			API_LIMITER: bindings.rateLimit({ namespace: "7301", simple: { limit: 600, period: 60 } }),

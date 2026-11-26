@@ -295,7 +295,7 @@ The smallest safe cut, and the fix for both the crash and the slowness. Nothing 
 **Files:**
 
 - New `Sources/Scoreline/WebApp.swift`:
-  - `static let base = URL(string: "https://scoreline-web.lame-o.workers.dev")!`
+  - `static let base = URL(string: "https://scoreline.fyi")!`
   - `static func game(_ id: String, league: String?) -> URL`: mirrors `web/src/data/gameHref.ts` and adds `from=mac`.
   - `static func open(_ url: URL)`: calls `NSWorkspace.shared.open`.
 - `RootView.swift`: in `show(_:)` (`open`, `follow`, `replace` and `go` all end there), turn `.detail(event)` into `WebApp.open(WebApp.game(event.id, league: store.leagueByEvent[event.id]))` and stay on the current page. That one choke point covers the list, tiles, schedules, standings, profiles and the smoke test.

@@ -12,14 +12,14 @@
   <a href="https://github.com/SubwooferLullaby/scoreline/releases/latest"><img src="https://img.shields.io/github/v/release/SubwooferLullaby/scoreline?label=release&color=1d1d1f" alt="Latest release"></a>
   <img src="https://img.shields.io/badge/macOS-15%2B-1d1d1f" alt="macOS 15 or later">
   <img src="https://img.shields.io/badge/price-free-1d1d1f" alt="Free">
-  <a href="https://scoreline-web.lame-o.workers.dev"><img src="https://img.shields.io/badge/web%20app-live-0a84ff" alt="Web app"></a>
+  <a href="https://scoreline.fyi"><img src="https://img.shields.io/badge/web%20app-live-0a84ff" alt="Web app"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-1d1d1f" alt="MIT license"></a>
 </p>
 
 <p align="center">
   <a href="https://github.com/SubwooferLullaby/scoreline/releases/latest"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/buttons/download-mac-dark.png"><img src="docs/buttons/download-mac-light.png" height="52" alt="Download for Mac"></picture></a>
   &nbsp;
-  <a href="https://scoreline-web.lame-o.workers.dev"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/buttons/try-web-dark.png"><img src="docs/buttons/try-web-light.png" height="52" alt="Try it on the web"></picture></a>
+  <a href="https://scoreline.fyi"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/buttons/try-web-dark.png"><img src="docs/buttons/try-web-light.png" height="52" alt="Try it on the web"></picture></a>
 </p>
 
 <!-- slot:hero:start -->
@@ -135,7 +135,7 @@ Click a name anywhere and its page opens: a team's results, form, schedule, rost
 
 ## On the web
 
-Scoreline also runs in any browser at **[scoreline-web.lame-o.workers.dev](https://scoreline-web.lame-o.workers.dev)**: the scores and the live game pages, on a desktop beside the scores, or on your phone, where it installs to the home screen like an app.
+Scoreline also runs in any browser at **[scoreline.fyi](https://scoreline.fyi)**: the scores and the live game pages, on a desktop beside the scores, or on your phone, where it installs to the home screen like an app.
 
 <!-- slot:web:start -->
 <p align="center">
@@ -315,7 +315,7 @@ No. Scoreline is scores, stats and plays. Each game's <b>Where to Watch</b> list
 <details>
 <summary><b>Is there an iPhone, iPad or Windows version?</b></summary>
 <br>
-The <a href="https://scoreline-web.lame-o.workers.dev">web app</a> runs in any modern browser and installs to your phone's home screen. The Mac app is macOS only.
+The <a href="https://scoreline.fyi">web app</a> runs in any modern browser and installs to your phone's home screen. The Mac app is macOS only.
 </details>
 
 <details>
