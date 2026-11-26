@@ -41,7 +41,9 @@ Keep it this short, and don't add hype.
 >
 > It's free. Sign in to start.
 >
-> [Sign in with a passkey] [Continue with Google]
+> [Get Started] [Continue with Google]
+> Your account is a passkey: Face ID, Touch ID, Windows Hello or your password manager. No password, no email.
+> Already have an account? Sign In
 >
 > **What's in it**
 > - Every league you follow, live, in one list.
@@ -53,9 +55,9 @@ Keep it this short, and don't add hype.
 > **How it works**
 > Scores come from public sports feeds. A play usually reaches Scoreline within a minute of happening. Each game page runs a short delay so that plays arrive in order and never jump.
 >
-> **Also on the Mac:** a menu bar app. [Download]
->
 > [GitHub] · [Privacy] · [Terms]
+
+**The Mac app isn't on the landing page yet.** 1.0.33 crashes on live soccer game pages (`MAC-WEB-SPLIT.md`), and it isn't notarized, so Gatekeeper blocks it for strangers. Add it back after phase 1 of the split ships and it has Developer ID signing.
 
 ## Owner steps
 

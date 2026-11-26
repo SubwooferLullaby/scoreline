@@ -52,8 +52,8 @@ for (const size of WIDTHS) {
 
         await page.goto("/");
         await expect(page.getByRole("heading", { level: 1, name: "Scoreline" })).toBeVisible();
-        await expect(page.getByRole("button", { name: "Sign in with a passkey" })).toBeEnabled();
-        await expect(page.getByRole("button", { name: "New here? Create a passkey" })).toBeVisible();
+        await expect(page.getByRole("button", { name: "Already have an account? Sign In" })).toBeEnabled();
+        await expect(page.getByRole("button", { name: "Get Started" })).toBeVisible();
         await expect(page.getByRole("link", { name: "Download", exact: true })).toHaveAttribute("href", "https://github.com/SubwooferLullaby/scoreline/releases/latest/download/Scoreline.dmg");
         await noSideScroll(page);
         await axe(page);
@@ -117,7 +117,7 @@ test("a passkey account from sign-up to deletion", async ({ browser, context, pa
   expect(api.status()).toBe(401);
 
   // Sign up: one passkey, and you land where you were going.
-  await page.getByRole("button", { name: "New here? Create a passkey" }).click();
+  await page.getByRole("button", { name: "Get Started" }).click();
   await expect(page).toHaveURL(/\/settings$/);
   const account = page.getByRole("group", { name: "Account", exact: true });
   await expect(account.getByText("Scoreline user")).toBeVisible();
@@ -146,12 +146,12 @@ test("a passkey account from sign-up to deletion", async ({ browser, context, pa
   await page.goto("/settings");
   await account.getByRole("button", { name: "Sign Out" }).click();
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("button", { name: "Sign in with a passkey" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Already have an account? Sign In" })).toBeVisible();
   await page.goto("/following");
   await expect(page).toHaveURL(/\/\?next=%2Ffollowing$/);
 
   // Sign in with the passkey: back to the page you asked for.
-  await page.getByRole("button", { name: "Sign in with a passkey" }).click();
+  await page.getByRole("button", { name: "Already have an account? Sign In" }).click();
   await expect(page).toHaveURL(/\/following$/);
 
   // Settings follow the account: a change here reaches a second browser, and its change comes back.
@@ -165,7 +165,7 @@ test("a passkey account from sign-up to deletion", async ({ browser, context, pa
   const secondAuthenticator = await virtualAuthenticator(other, second);
   for (const credential of await authenticator.credentials()) await secondAuthenticator.add(credential);
   await second.goto("/settings");
-  await second.getByRole("button", { name: "Sign in with a passkey" }).click();
+  await second.getByRole("button", { name: "Already have an account? Sign In" }).click();
   await expect(second).toHaveURL(/\/settings$/);
   await expect.poll(() => storedTheme(second), { timeout: 15_000 }).toBe("dark");
   await expect(second.locator("html")).toHaveAttribute("data-theme", "dark");
@@ -181,12 +181,12 @@ test("a passkey account from sign-up to deletion", async ({ browser, context, pa
   await expect(page.getByText("Delete your account?")).toBeVisible();
   await page.getByRole("button", { name: "Delete Account", exact: true }).click();
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("button", { name: "Sign in with a passkey" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Already have an account? Sign In" })).toBeVisible();
 
   // The passkey can't sign in again: Chromium drops it from the authenticator
   // when the page signals it unknown (WebAuthn's Signal API); a browser without
   // that signal is told by the server it belongs to no account.
-  await page.getByRole("button", { name: "Sign in with a passkey" }).click();
+  await page.getByRole("button", { name: "Already have an account? Sign In" }).click();
   await expect(page.getByRole("status")).toContainText(/doesn't belong to a Scoreline account|No passkey was used/);
   await expect(page).toHaveURL(/\/$/);
   await page.goto("/settings");

@@ -3,9 +3,10 @@
  * No React and nothing of the app; just the passkey ceremonies
  * (src/auth/passkeys.ts) and the redirect after.
  *
- * - "Sign in with a passkey": the browser offers the passkeys it holds for
- *   this site (a discoverable credential; there's no username to type).
- * - "New here? Create a passkey": a new account with only a passkey.
+ * - "Get Started": a new account with only a passkey. Most visitors are new,
+ *   so this is the main button.
+ * - "Already have an account? Sign In": the browser offers the passkeys it
+ *   holds for this site (a discoverable credential; there's no username).
  * - "Continue with Google": only when the Worker left the button in.
  *
  * Errors show inline, in plain words, in the status line. On success you go
