@@ -10,7 +10,8 @@
 .landing {
   --measure: 40rem;
   --wide: 68rem;
-  --gutter: max(1rem, env(safe-area-inset-left));
+  --gutter-l: max(1rem, env(safe-area-inset-left));
+  --gutter-r: max(1rem, env(safe-area-inset-right));
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --live: #e5484d;
   --chip: #f3f2ef;
@@ -38,9 +39,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  max-width: calc(var(--wide) + 2 * var(--gutter));
+  max-width: calc(var(--wide) + var(--gutter-l) + var(--gutter-r));
   margin: 0 auto;
-  padding: 1.125rem var(--gutter);
+  padding: 1.125rem var(--gutter-r) 1.125rem var(--gutter-l);
   font-size: 0.875rem;
 }
 
@@ -77,7 +78,7 @@
 /* Layout: text on a measure, the screenshot wider. */
 .landing main {
   max-width: none;
-  padding: 0 var(--gutter) 2rem;
+  padding: 0 var(--gutter-r) 2rem var(--gutter-l);
 }
 
 .hero {
@@ -439,6 +440,26 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
+  }
+}
+
+/* Touch: the small text links get a finger-sized hit area (44px tall) without moving anything. */
+@media (pointer: coarse) {
+  .wordmark,
+  .nav-links a,
+  .nav-links .link,
+  .footer-links a,
+  .fine .link {
+    position: relative;
+  }
+  .wordmark::after,
+  .nav-links a::after,
+  .nav-links .link::after,
+  .footer-links a::after,
+  .fine .link::after {
+    content: "";
+    position: absolute;
+    inset: -0.75rem -0.375rem;
   }
 }
 
