@@ -18,7 +18,7 @@
  * indicator says how far behind live the page is, and while play has
  * stopped its reason sits under the clock that stopped with it.
  */
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { TeamLink, teamRefFrom } from "../../profiles/ProfileLinks";
 import { GlassCard, Icon, LiveStatus, ScoreDigits, Skeleton, TeamLogo } from "../../../design/components";
 import { glintProgress, pillOpacity, popScale, sample, washPulse } from "../../../data/celebrations";
@@ -31,6 +31,7 @@ import { useNow } from "../../../state/clock";
 import { settings, useIsFollowing, useSettings } from "../../../state/settings";
 import { useColorScheme } from "../../../state/theme";
 import { useMediaQuery, useReducedMotion } from "./useMedia";
+import { pointSize, textWidth } from "../../scores/measure";
 import { BehindLiveHover } from "./broadcast";
 import type { BehindLive } from "../../../data/broadcast/behindLive";
 import styles from "./Hero.module.css";
@@ -98,13 +99,17 @@ export function Hero({ event, palette, identity = null, scores, beats, surface, 
   }, [beats.glints]);
 
   const live = event.state === "live";
+  const match = event.content.kind === "match" ? event.content : null;
+  const glyphs = (s: Side) => (possession === s ? 1 : 0) + (trophy === s ? 1 : 0);
+  const nameExtras = match ? Math.max(heroNameExtras(match.top, glyphs("top")), heroNameExtras(match.bottom, glyphs("bottom"))) : 0;
+  const [nameColumn, nameSize] = useHeroNameSize(match ? [match.top.name, match.bottom.name] : [], nameExtras);
   const card =
     event.content.kind === "match" && palette ? (
       <div className={styles.hero}>
         <h1 className="visually-hidden">{spoken}</h1>
         {caption ? <p className={styles.caption}>{caption}</p> : null}
         <div className={styles.scoreboard}>
-          <TeamColumn event={event} c={event.content.top} color={(identity ?? palette).top} hasBall={possession === "top"} inAir={possessionInAir} trophy={trophy === "top" ? beats.trophies : null} />
+          <TeamColumn event={event} c={event.content.top} size={nameSize} columnRef={nameColumn} color={(identity ?? palette).top} hasBall={possession === "top"} inAir={possessionInAir} trophy={trophy === "top" ? beats.trophies : null} />
           <div className={styles.center}>
             {scores.top != null || scores.bottom != null ? (
               <span className={styles.score}>
@@ -116,7 +121,7 @@ export function Hero({ event, palette, identity = null, scores, beats, surface, 
             <HeroStatus event={event} clock={clock ?? event.clock} stale={staleSince != null} fallback={clockFallback} second={liveSecond ?? null} ticking={surface === "hero"} chip={chip} stoppage={stoppage} behind={behind} />
             {note ? <span className={styles.note}>{note}</span> : null}
           </div>
-          <TeamColumn event={event} c={event.content.bottom} color={(identity ?? palette).bottom} hasBall={possession === "bottom"} inAir={possessionInAir} trophy={trophy === "bottom" ? beats.trophies : null} />
+          <TeamColumn event={event} c={event.content.bottom} size={nameSize} color={(identity ?? palette).bottom} hasBall={possession === "bottom"} inAir={possessionInAir} trophy={trophy === "bottom" ? beats.trophies : null} />
         </div>
       </div>
     ) : event.content.kind === "field" ? (
@@ -236,13 +241,59 @@ function Trophy({ bounces }: { bounces: number }) {
   );
 }
 
-function TeamColumn({ event, c, color, hasBall, inAir = false, trophy = null }: { event: ScoreEvent; c: Competitor; color: string; hasBall: boolean; inAir?: boolean; trophy?: number | null }) {
+/**
+ * The name's size (DetailView.swift `HeroName`): the largest step at which the
+ * longest word of either name fits the column beside what shares its line, so
+ * both names step down together and a long ranked name keeps its star beside
+ * it rather than breaking mid-word. The web's 13 first, then the Mac's steps.
+ */
+export const HERO_NAME_SIZES = [13, 12, 11.5, 11, 10.5] as const;
+
+/** The largest size whose longest word fits `room` points (the smallest if none does). (pure) */
+export function heroNameSize(longestWords: readonly number[], room: number): number {
+  for (let i = 0; i < longestWords.length; i++) if (longestWords[i]! <= room) return HERO_NAME_SIZES[i]!;
+  return HERO_NAME_SIZES[HERO_NAME_SIZES.length - 1]!;
+}
+
+/** What else shares a name's line, in points: the rank and its gap, each glyph (ball, trophy) with its gap, the follow star (its button's 10pt footprint and gap), the line's padding. */
+function heroNameExtras(c: Competitor, glyphs: number): number {
+  return (c.rank != null ? textWidth(String(c.rank), 10, 600) + 3 : 0) + glyphs * 11 + (c.id != null ? 13 : 0) + 8;
+}
+
+/**
+ * Both names' size, worked out from a column's width (the two are equal) less
+ * the larger side's extras; it re-renders only when it crosses a step, never
+ * per frame of a resize. A name breaks after a space or a dash ("Louisiana–Monroe").
+ */
+function useHeroNameSize(names: readonly string[], extras: number): [RefObject<HTMLDivElement | null>, number] {
+  const ref = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState<number>(HERO_NAME_SIZES[0]);
+  const key = names.join("\n");
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const words = key.split(/\s+|(?<=[–-])/).filter(Boolean);
+    const longest = HERO_NAME_SIZES.map((s) => Math.max(0, ...words.map((w) => textWidth(w, s, 500))));
+    const fit = () => setSize(heroNameSize(longest, el.clientWidth / pointSize() - extras));
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [key, extras]);
+  return [ref, size];
+}
+
+function TeamColumn({ event, c, size, columnRef, color, hasBall, inAir = false, trophy = null }: { event: ScoreEvent; c: Competitor; size: number; columnRef?: RefObject<HTMLDivElement | null>; color: string; hasBall: boolean; inAir?: boolean; trophy?: number | null }) {
   const following = useIsFollowing(c.id);
   const glow = color === NEUTRAL ? "var(--viz-neutral)" : color;
   const g = (pct: number) => `color-mix(in srgb, ${glow} ${pct}%, transparent)`;
-  const name = <span className={[styles.name, stepsBack(event, c) ? styles.dimmed : null].filter(Boolean).join(" ")}>{c.name}</span>;
+  const name = (
+    <span className={[styles.name, stepsBack(event, c) ? styles.dimmed : null].filter(Boolean).join(" ")} style={size !== HERO_NAME_SIZES[0] ? { fontSize: `calc(${size} * var(--pt))` } : undefined}>
+      {c.name}
+    </span>
+  );
   return (
-    <div className={styles.team}>
+    <div className={styles.team} ref={columnRef}>
       <span className={styles.crest}>
         <span className={styles.glow} style={{ background: `radial-gradient(circle, ${g(35)} 0%, ${g(33)} 25%, ${g(17)} 34%, ${g(5)} 42%, transparent 50%)` }} aria-hidden="true" />
         <TeamLogo url={c.logo} size={34} />
