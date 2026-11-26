@@ -69,5 +69,5 @@ Keep it this short, and don't add hype.
 - [ ] First-party analytics, `/admin`, `pnpm stats`
 - [ ] Hardening: headers, rate limits, error reporting
 - [ ] QA of every page type at 390, 1024 and 1440 in light and dark, on live data
-- [ ] Mac and web split: `docs/MAC-WEB-SPLIT.md`
+- [x] Mac and web split, planned: [MAC-WEB-SPLIT.md](MAC-WEB-SPLIT.md)
 - [ ] Deploy, then check production signed out and signed in
