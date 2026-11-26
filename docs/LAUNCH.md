@@ -9,8 +9,8 @@ This file holds the decisions and the checklist. `web/ARCHITECTURE.md` holds how
 - **The app is behind sign-in.** Signed out, `/` is the landing page and every other app route sends you there, with the route kept so that you land on it after you sign in. `/privacy` and `/terms` are public. The Worker decides before any HTML is served, so a signed-out visitor never downloads the app bundle. The `/api/*` proxy answers 401 without a session. One flag, `REQUIRE_SIGN_IN`, turns the gate off.
 - **Accounts:** [Better Auth](https://better-auth.com) on the Worker, with Cloudflare D1 as its database (`scoreline`, on the owner's personal account only).
   - **Passkeys** work everywhere with no setup: Face ID, Touch ID, Windows Hello, a phone or a password manager. A passkey can create an account on its own, with no email.
-  - **Google** shows up once its OAuth client's secrets are set. That waits on the owner's choice of the support email that Google's consent screen shows (see Owner steps below).
-  - **Email codes** wait for a domain, because sending mail needs one.
+  - **Google** is on (2026-11-26). The OAuth client lives in the Google Cloud project "Scoreline" on the owner's Google account, published to production with the basic scopes only (openid, email, profile), so it needs no verification. Its secrets are `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` on the Worker.
+  - **No email sign-in** (owner, 2026-11-26): passkeys and Google are the two ways in. Revisit only if the analytics show many people stalling at the passkey prompt (`sign_in_start` against `sign_up`).
   - Sessions live in an HttpOnly cookie, so each request needs no database read.
   - In Settings → Account you can see who you're signed in as, manage your passkeys, sign out, and delete the account along with its data.
 - **Your settings follow your account.** Followed teams, leagues and the rest of the settings sync to D1 on change, last write wins. A new device takes the account's copy. The first sign-in uploads the device's copy.
@@ -25,7 +25,8 @@ This file holds the decisions and the checklist. `web/ARCHITECTURE.md` holds how
   - `robots.txt` that allows the public pages only
   - Open Graph and Twitter cards
   - a 404 and an error page in the same plain style
-- **Not now:** ads, payments, email sign-in and a custom domain. Each needs an owner decision. Ads and payments also need data licensing first, because ESPN's terms bar commercial use of its API.
+- **Domain: `scoreline.fyi`** (owner, 2026-11-26; $5.20 a year at cost on Cloudflare Registrar). With `SITE_URL` set, every other host, workers.dev included, answers a 301 to it, so the site has one origin and passkeys have one relying party.
+- **Not now:** ads and payments. Each needs an owner decision. Ads and payments also need data licensing first, because ESPN's terms bar commercial use of its API.
 
 ## Landing copy
 
@@ -61,15 +62,16 @@ Keep it this short, and don't add hype.
 
 ## Owner steps
 
-1. **Domain (needs a yes, and it costs money):** `scoreline.fans` ($8.20 a year), `scoreline.dev` ($8.20) and `usescoreline.com` ($11.17) were available on 2026-11-26 through Cloudflare Registrar. The `.app`, `.com`, `.co`, `.tv` and `.live` names are taken. A domain gives a nicer link and makes email sign-in possible. Passkeys made on `workers.dev` stay valid after a move only through WebAuthn's related origins, so it's better to move early.
-2. **Google sign-in:** Google's consent screen shows a "User support email" to everyone who signs in. Pick which address that should be (it can be a Google Group). Then create the OAuth client in Google Cloud. Its redirect URI is `<site>/api/auth/callback/google`. Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` as Worker secrets.
+1. **Register `scoreline.fyi`** in the Cloudflare dashboard (Domain Registration → Register Domains) on the personal account. The CLI can't: the account has no registrant contact or billing profile yet, and the registrar needs both.
+2. **Then move the site:** add `domains: ["scoreline.fyi"]` to `worker` in `web/cloudflare.config.ts`, set `SITE_URL` to `https://scoreline.fyi`, deploy, and change the Google consent screen's home page, privacy and terms links to the new domain. The OAuth client already lists both callback URLs. Passkeys made on workers.dev don't work on the new domain, so anyone with one makes a new account.
 
 ## Checklist
 
 - [x] Accounts: D1, Better Auth, passkeys, the gate, Settings → Account, settings sync
 - [x] Landing, privacy and terms pages, Open Graph image, robots.txt
 - [x] First-party analytics, `/admin`, `pnpm stats`
-- [ ] Hardening: headers, rate limits, error reporting (headers and rate limits done; error reporting to do)
+- [x] Hardening: headers, rate limits, error reporting (client errors go to D1's `client_errors` and show in `/admin`)
 - [ ] QA of every page type at 390, 1024 and 1440 in light and dark, on live data
 - [x] Mac and web split, planned: [MAC-WEB-SPLIT.md](MAC-WEB-SPLIT.md)
-- [ ] Deploy, then check production signed out and signed in
+- [x] Deploy, then check production signed out and signed in (passkeys by `landing.spec.ts` against production; Google by hand in the owner's browser)
+- [ ] Move to `scoreline.fyi` (Owner steps 1 and 2)

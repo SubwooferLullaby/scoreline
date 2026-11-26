@@ -13,6 +13,7 @@
  *   without one, while `REQUIRE_SIGN_IN` is on), behind API_LIMITER per
  *   session, through the cached `Proxy` entrypoint.
  * - `/assets/*`: the hashed bundles, or a 404 (never index.html).
+ * - Another host than `SITE_URL`'s: a 301 there (`elsewhere`).
  * - Pages: the gate (worker/gate.ts) picks the landing, the app's shell, a
  *   public page, a redirect to the landing or the plain 404 (worker/pages.ts).
  *   A landing served to a visitor is counted (`recordLandingView`).
@@ -147,9 +148,24 @@ export class Proxy extends WorkerEntrypoint<Env> {
   }
 }
 
+/**
+ * With `SITE_URL` set, every other host (workers.dev) sends you there, path
+ * and all: passkeys belong to one origin, so the site has one address.
+ * Localhost is exempt, so development and the e2e specs run as they are.
+ */
+export function elsewhere(url: URL, env: Env): string | null {
+  const configured = (env.SITE_URL ?? "").trim();
+  if (!configured) return null;
+  const site = new URL(configured);
+  if (url.origin === site.origin || url.hostname === "localhost" || url.hostname === "127.0.0.1") return null;
+  return `${site.origin}${url.pathname}${url.search}`;
+}
+
 /** Every request. `dev` is the build's (`import.meta.env.DEV`); tests pass their own. */
 export async function handle(request: Request, env: Env, ctx: ExecutionContext, dev: boolean): Promise<Response> {
   const url = new URL(request.url);
+  const moved = elsewhere(url, env);
+  if (moved) return Response.redirect(moved, 301);
   const path = url.pathname;
   if (path === "/api/auth" || path.startsWith("/api/auth/")) return auth(request, env, path);
   if (path === "/api/me" || path.startsWith("/api/me/")) return me(request, env, path);
