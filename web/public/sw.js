@@ -6,12 +6,18 @@
  *
  * - Pages: network first; offline, the last good app shell (index.html), so
  *   the app opens and says it can't connect instead of the browser's error.
+ *   Only the app's shell is kept: the Worker marks each page
+ *   (`X-Scoreline-Page`, worker/headers.ts), and a page that isn't the app
+ *   (the landing, a redirect to it, the legal pages) is never stored. The
+ *   landing or a redirect to it means signed out: the kept shell is dropped,
+ *   so a signed-out visitor offline never gets the app. Sign Out and Delete
+ *   Account drop it too (src/state/account.ts).
  * - /assets/ (hashed, immutable) and the icons: cache first, filled as they
  *   load. The shell's own assets are fetched on install.
  * - A clicked alert focuses an open Scoreline tab and asks it to open the
  *   game (it navigates in place), or opens a new window on the game.
  */
-const SHELL = "scoreline-shell-v1";
+const SHELL = "scoreline-shell-v2";
 const ASSETS = "scoreline-assets-v1";
 const KEEP_ASSETS = 80;
 
@@ -20,7 +26,7 @@ self.addEventListener("install", (event) => {
     (async () => {
       const cache = await caches.open(SHELL);
       const response = await fetch("/", { cache: "no-cache" });
-      if (!response.ok) return;
+      if (!isAppShell(response)) return;
       await cache.put("/", response.clone());
       // The scripts and styles the shell loads first, so it opens offline.
       const html = await response.text();
@@ -41,6 +47,16 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+/** The app's own index.html, as the Worker serves it to a signed-in visitor. */
+function isAppShell(response) {
+  return response.ok && response.type === "basic" && response.headers.get("X-Scoreline-Page") === "app";
+}
+
+/** Signed out: the landing, or a redirect to it (a navigation's redirect comes back opaque). */
+function isSignedOut(response) {
+  return response.headers.get("X-Scoreline-Page") === "landing" || response.type === "opaqueredirect" || response.redirected;
+}
+
 async function trim(cache) {
   const keys = await cache.keys();
   for (const request of keys.slice(0, Math.max(0, keys.length - KEEP_ASSETS))) await cache.delete(request);
@@ -57,9 +73,11 @@ self.addEventListener("fetch", (event) => {
       (async () => {
         try {
           const response = await fetch(request);
-          if (response.ok) {
+          if (isAppShell(response)) {
             const cache = await caches.open(SHELL);
             await cache.put("/", response.clone());
+          } else if (isSignedOut(response)) {
+            await caches.delete(SHELL);
           }
           return response;
         } catch {
