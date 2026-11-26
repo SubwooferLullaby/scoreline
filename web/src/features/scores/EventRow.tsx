@@ -110,12 +110,14 @@ function EventRowView({ event, keyboard, selected, detail, stale, revealDelay, t
             ) : null}
           </span>
         )}
-        {context && !lane ? (
-          <span key={context.text} className={[styles.context, reveal?.className].filter(Boolean).join(" ")} style={reveal?.style}>
-            {context.text}
-          </span>
-        ) : null}
       </span>
+      {/* The line under the teams runs the row's whole width, under the status too: a CS2 tournament's
+          name isn't cut where the score column ends ("PGL Major Singapore 2026 Stage 1 · Best of 3"). */}
+      {context && !lane ? (
+        <span key={context.text} className={[styles.context, reveal?.className].filter(Boolean).join(" ")} style={reveal?.style} aria-hidden="true">
+          {context.text}
+        </span>
+      ) : null}
       {lane ? <DetailLane event={event} reveal={reveal} /> : null}
       <span className={[styles.status, reveal?.className].filter(Boolean).join(" ")} style={reveal?.style} aria-hidden="true">
         {pinned || mayStream(event) ? (
