@@ -73,6 +73,11 @@
   min-width: 0;
 }
 
+/* A tournament day at lane width: the block and the lane are one cell. */
+.teams[data-span] {
+  grid-column: 1 / -2;
+}
+
 .lane {
   grid-column: 2;
   min-width: 0;

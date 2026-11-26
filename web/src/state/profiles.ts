@@ -49,6 +49,7 @@ import {
 import { espnPhoto, fotMobPhoto, heroPhotoURL } from "../data/profiles/photos";
 import type { Sport } from "../data/models";
 import { preloadPhoto } from "./profilePhotos";
+import { frugal } from "./frugal";
 import { persisted } from "./persist";
 import { hasFailed, isAnswer, retrying } from "./retry";
 import { queryClient } from "./scores";
@@ -516,12 +517,6 @@ export function usePlayerProfile(ref: PlayerRef, options: { careerRequested: boo
 
 const prefetchLog: number[] = [];
 const asked = new Map<string, number>();
-
-/** A connection that costs, or a user who asked to save data: no speculative requests. */
-function frugal(): boolean {
-  const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
-  return connection?.saveData === true || connection?.effectiveType === "2g" || connection?.effectiveType === "slow-2g";
-}
 
 /** The first request of a page, after a hover dwell: never on a frugal connection, at most six a minute, once per URL while fresh. */
 function prefetchURL(url: string, ttl: number): void {

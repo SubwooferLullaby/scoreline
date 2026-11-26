@@ -14,7 +14,7 @@
  * SCORELINE_SCREENSHOTS.
  */
 import { expect, test, type Page } from "@playwright/test";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const OUT = process.env.SCORELINE_SCREENSHOTS ?? join("test-results", "screenshots");
@@ -150,3 +150,52 @@ for (const size of WIDTHS) {
     });
   }
 }
+
+/**
+ * The college hero at 390: a long ranked name keeps the rank and the follow
+ * star on its line, the name giving way to two lines at most (the Mac's
+ * HStack, `lineLimit(2)`), never the star wrapping under it. The recorded
+ * college final's summary, its teams renamed to the longest ranked names.
+ */
+test.describe("390 college hero names", () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+  const summary = JSON.parse(readFileSync(join(import.meta.dirname, "..", "fixtures", "espn-cfb-summary.json"), "utf8")) as { header: { competitions: { competitors: { rank?: number; team: Record<string, unknown> }[] }[] } };
+  const names: [string, number][] = [
+    ["Mississippi State", 25],
+    ["Louisiana–Monroe", 24],
+  ];
+  summary.header.competitions[0]!.competitors.forEach((c, i) => {
+    const [name, rank] = names[i]!;
+    c.rank = rank;
+    Object.assign(c.team, { location: name, shortDisplayName: name, displayName: name });
+  });
+
+  test("a long ranked name keeps its star beside it", async ({ page }) => {
+    const errors = watchErrors(page);
+    await page.route("**/api/site.api.espn.com/apis/site/v2/sports/football/college-football/summary?event=401856732**", (route) => route.fulfill({ json: summary }));
+    await page.goto("/game/espn-401856732?league=college-football");
+    const hero = page.locator('[class*="_heroWrap_"]').first();
+    for (const [name, rank] of names) {
+      const star = hero.getByRole("button", { name: `Follow ${name}` });
+      await expect(star).toBeVisible({ timeout: 20_000 });
+      const line = star.locator("xpath=..");
+      await expect(line).toContainText(`${rank}`);
+      const box = (await line.boundingBox())!;
+      // The star itself (its button is a larger target over a smaller footprint).
+      const s = (await star.locator("svg").boundingBox())!;
+      const label = line.locator('[class*="_name_"]');
+      const text = (await label.boundingBox())!;
+      // The star sits beside the name, inside its line: not on a line of its own below it.
+      expect(s.x).toBeGreaterThanOrEqual(text.x + text.width - 1);
+      expect(s.y + s.height / 2).toBeGreaterThan(text.y);
+      expect(s.y + s.height / 2).toBeLessThan(text.y + text.height);
+      // Two lines of the name at most, and nothing outside the hero.
+      const lineHeight = parseFloat(await label.evaluate((e) => getComputedStyle(e).lineHeight));
+      expect(text.height).toBeLessThanOrEqual(2 * lineHeight + 1);
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(390);
+    }
+    await page.screenshot({ path: join(OUT, "390-light-college-hero-long-names.png"), clip: { x: 0, y: 0, width: 390, height: 260 } });
+    expect(errors, errors.join("\n")).toEqual([]);
+  });
+});

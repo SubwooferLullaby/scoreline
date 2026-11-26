@@ -22,7 +22,7 @@
  */
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useRef } from "react";
-import { coloredEvent, EMPTY_DETAIL, eventFromSummary, fetchDetail, parseESPNDetail, scoreboardURL, summaryURL, type GameDetail } from "../../../data/gameDetail";
+import { captionAfterGame, coloredEvent, EMPTY_DETAIL, eventFromSummary, fetchDetail, parseESPNDetail, scoreboardURL, summaryURL, type GameDetail } from "../../../data/gameDetail";
 import { loadCSMatch, matchByIDURL, matchNumber } from "../../../data/cs2";
 import { getJSON, HTTPError } from "../../../data/http";
 import { arr, at } from "../../../data/json";
@@ -201,7 +201,8 @@ export function useGame(id: string, { poll, league }: { poll: boolean; league: s
   const loaded = detail.data?.detail ?? null;
   // The game in the colors its summary says: each team's own, and what it wears today (GameDetail.colored).
   const plain = boardEvent ?? worn;
-  const event = useMemo(() => (plain && loaded ? coloredEvent(plain, loaded) : plain), [plain, loaded]);
+  // A finished series game says the series as it stood after it, not as it stands now (ESPN's line).
+  const event = useMemo(() => (plain && loaded ? captionAfterGame(coloredEvent(plain, loaded), loaded.seriesAfter) : plain), [plain, loaded]);
   const lastLoaded = detail.dataUpdatedAt || null;
   const staleSince = event?.state === "live" && loaded && failures.current >= 2 ? lastLoaded : event?.state === "live" && scores.status === "offline" ? scores.lastUpdated : null;
 

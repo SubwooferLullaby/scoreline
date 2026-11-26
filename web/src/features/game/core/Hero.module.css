@@ -124,11 +124,16 @@
   pointer-events: none;
 }
 
+/*
+ * One line, as the Mac's HStack: the rank, the name, then the ball, the trophy and the star.
+ * Only the name gives way (two lines at most), so the star never wraps onto a line of its own
+ * under a long ranked name ("21 South Carolina" at 390).
+ */
 .nameLine {
   display: flex;
   align-items: baseline;
   justify-content: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: calc(3 * var(--pt));
   max-width: 100%;
   padding: 0 calc(4 * var(--pt));
@@ -156,6 +161,7 @@
 }
 
 .rank {
+  flex-shrink: 0;
   font-size: var(--text-small);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -163,16 +169,19 @@
 }
 
 .ball {
+  flex-shrink: 0;
   color: var(--label-secondary);
   align-self: center;
 }
 
 .follow {
+  flex-shrink: 0;
   display: inline-grid;
   place-items: center;
   width: calc(18 * var(--pt));
   height: calc(18 * var(--pt));
-  margin: calc(-3 * var(--pt)) 0;
+  /* An 18pt target over a 10pt footprint: the 9pt star takes no more of the name's line than it needs. */
+  margin: calc(-3 * var(--pt)) calc(-4 * var(--pt));
   border-radius: 50%;
   color: var(--label-tertiary);
   align-self: center;
@@ -301,6 +310,7 @@
 
 /* The winner's trophy: arrives like a badge (from 60%), bounces when won on the page. */
 .trophy {
+  flex-shrink: 0;
   display: inline-grid;
   place-items: center;
   align-self: center;
@@ -404,6 +414,7 @@
 }
 
 .nameLink {
+  min-width: 0;
   color: inherit;
   text-decoration: none;
   border-radius: calc(3 * var(--pt));

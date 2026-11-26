@@ -43,3 +43,27 @@ for (const { name, width, height, mobile } of [
     });
   }
 }
+
+/**
+ * The line under a row's teams (a CS2 match's tournament and format, a live
+ * situation) runs the row's whole width at 1024, under the status too: it
+ * isn't cut where the score column ends while the rest of the row is free.
+ */
+test.describe("1024 dark list captions", () => {
+  test.use({ viewport: { width: 1024, height: 768 }, colorScheme: "dark" });
+
+  test("a row's caption has the row's width", async ({ page }) => {
+    await page.goto("/?demo");
+    const row = page.locator("aside [data-nav-id]").filter({ hasText: "PGL Masters Bucharest 2026 · Best of 3" }).first();
+    await expect(row).toBeVisible({ timeout: 20_000 });
+    const context = row.locator('[class*="_context_"]');
+    const status = row.locator('[class*="_status_"]').first();
+    const c = (await context.boundingBox())!;
+    const s = (await status.boundingBox())!;
+    // The caption reaches the status column's right edge, below it.
+    expect(c.x + c.width).toBeGreaterThanOrEqual(s.x + s.width - 1);
+    expect(c.y).toBeGreaterThanOrEqual(s.y + s.height - 1);
+    expect(await context.evaluate((e) => e.scrollWidth <= e.clientWidth + 1), "the caption is cut").toBe(true);
+    await page.locator("aside").screenshot({ path: join(OUT, "1024-dark-list-captions.png") });
+  });
+});

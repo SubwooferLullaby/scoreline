@@ -333,6 +333,8 @@ export interface GameDetail {
   readonly bottomRoster: Roster;
   /** Round history per map number. */
   readonly rounds: Readonly<Record<number, readonly CSRound[]>>;
+  /** A finished postseason game: the series as it stood after it ("MIL leads 2–1"), from the series' own results; null: ESPN's line stands. */
+  readonly seriesAfter: string | null;
   // Climbing (ClimbingDetail: data/climbing.ts)
   readonly ranking: readonly Athlete[];
   readonly roundName: string | null;
@@ -399,6 +401,7 @@ export const EMPTY_DETAIL: GameDetail = {
   topRoster: EMPTY_ROSTER,
   bottomRoster: EMPTY_ROSTER,
   rounds: {},
+  seriesAfter: null,
   ranking: [],
   roundName: null,
   roundStatus: null,
@@ -776,6 +779,7 @@ export function parseESPNDetail(summary: JSONValue, { event, path, id, sport, bo
   return {
     ...EMPTY_DETAIL,
     venue: str(at(summary, "gameInfo", "venue", "fullName")) ?? null,
+    seriesAfter: seriesAfterGame(summary, id),
     seasonIsCurrent: bool(at(summary, "header", "season", "current")) ?? null,
     competition: sport === "soccer" ? parseMatchCompetition(summary) : null,
     broadcast: str(at(competition, "broadcasts", 0, "media", "shortName")) ?? null,
@@ -1147,3 +1151,50 @@ const NBA_PATH_ = "basketball/nba";
 
 /** "MIL leads series 2-0" with an en dash (shared by the series caption). */
 export const seriesText = (summary: string) => enDash(summary);
+
+/**
+ * The series as it stood after this game, from the summary's `seasonseries`
+ * (each game's winner, in order): "MIL leads 2–1", "Series tied 1–1", or on
+ * the series' last game "TB wins 4–3", in ESPN's words as the caption
+ * shortens them (`shortSeriesSummary`). ESPN's own line is the series now,
+ * so Game 3 of a finished World Series said "TB wins 3–2" under Game 3.
+ * Null unless the game is final and every game to it has a winner. (pure)
+ */
+export function seriesAfterGame(summary: JSONValue, id: string): string | null {
+  const all = arr(at(summary, "seasonseries"));
+  const entry = ["current", "playoff"].map((type) => all.find((s) => str(at(s, "type")) === type && arr(at(s, "events")).some((e) => str(at(e, "id")) === id))).find((s) => s != null);
+  if (!entry) return null;
+  const events = arr(at(entry, "events"));
+  const index = events.findIndex((e) => str(at(e, "id")) === id);
+  const wins = new Map<string, number>();
+  const names = new Map<string, string>();
+  for (const e of events.slice(0, index + 1)) {
+    if (str(at(e, "statusType", "state")) !== "post") return null;
+    const competitors = arr(at(e, "competitors"));
+    for (const c of competitors) {
+      const team = str(at(c, "team", "id"));
+      if (team == null) continue;
+      wins.set(team, wins.get(team) ?? 0);
+      names.set(team, str(at(c, "team", "abbreviation")) ?? team);
+    }
+    const winner = competitors.find((c) => bool(at(c, "winner")) === true);
+    const team = str(at(winner, "team", "id"));
+    if (team == null) return null;
+    wins.set(team, (wins.get(team) ?? 0) + 1);
+  }
+  const [a, b] = [...wins].sort((x, y) => y[1] - x[1]);
+  if (!a || !b) return null;
+  if (a[1] === b[1]) return `Series tied ${a[1]}–${b[1]}`;
+  const last = index === events.length - 1 && bool(at(entry, "completed")) === true;
+  return `${names.get(a[0])} ${last ? "wins" : "leads"} ${a[1]}–${b[1]}`;
+}
+
+/** The event's caption with its series line as it stood after this game (`seriesAfterGame`); the caption as it was otherwise. */
+export function captionAfterGame(event: ScoreEvent, seriesAfter: string | null): ScoreEvent {
+  if (!seriesAfter || event.state !== "final" || !event.caption) return event;
+  const parts = event.caption.split(" · ");
+  const i = parts.findIndex((p) => /^(\S+ (leads|wins) \d+–\d+|Series tied \d+–\d+)$/.test(p));
+  if (i < 0 || parts[i] === seriesAfter) return event;
+  parts[i] = seriesAfter;
+  return { ...event, caption: parts.join(" · ") };
+}

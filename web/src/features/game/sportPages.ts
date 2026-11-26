@@ -5,12 +5,12 @@
  *
  * `sportPage(kind)` returns one promise per kind, marked settled the way
  * React's `use` reads a thenable, so a page whose chunk is already here
- * renders on its first pass with no fallback. `warmSportPages` loads the
- * kinds of the leagues a user follows once the list has painted (AppShell),
- * so a click rarely waits.
+ * renders on its first pass with no fallback. `warmEventPages` loads the
+ * kinds of the games a click is likely to open (app/warm.ts: the live ones
+ * at idle, a row as it's pointed at, lit or touched), so a click rarely waits.
  */
-import { leaguePageKind, type PageKind } from "../../data/sections";
-import type { League } from "../../data/models";
+import { pageKind, type PageKind } from "../../data/sections";
+import type { EventRef } from "../../data/models";
 import type { UseSportPage } from "./core/sport";
 import { useCommonSections } from "./core/useCommonSections";
 
@@ -70,7 +70,7 @@ export function sportPage(kind: PageKind): Promise<UseSportPage> {
   return promise;
 }
 
-/** Loads the pages of these leagues' games ahead of a click. */
-export function warmSportPages(leagues: readonly League[]): void {
-  for (const kind of new Set(leagues.map(leaguePageKind))) void sportPage(kind).catch(() => {});
+/** Loads the pages of these games ahead of a click. */
+export function warmEventPages(refs: readonly (EventRef | null)[]): void {
+  for (const kind of new Set(refs.map(pageKind))) void sportPage(kind).catch(() => {});
 }

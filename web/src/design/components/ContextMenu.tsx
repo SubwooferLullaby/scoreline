@@ -3,7 +3,7 @@
  * in SwiftUI: a right-click, a long press, Shift-F10), in a layer over the
  * page, so a scrolling pane never clips it. It opens down and right of the
  * point and flips at the window's edges, growing from the corner nearest
- * it. Scrolling, resizing or leaving the window closes it. Its own module,
+ * it. Scrolling by hand, resizing or leaving the window closes it. Its own module,
  * so pages that never open one don't carry it.
  *
  *     {menu ? <ContextMenu label="Arsenal vs Chelsea" at={menu} entries={…} onClose={() => setMenu(null)} /> : null}
@@ -64,16 +64,22 @@ export function ContextMenu({ label, at, entries, onClose, returnFocus }: Contex
     const onPointer = (event: PointerEvent) => {
       if (!surface.current?.contains(event.target as Node)) close(false);
     };
+    // The page scrolled by hand (a wheel, a trackpad, a finger) closes it. Not
+    // any `scroll` event: a live page scrolls on its own under the menu (scroll
+    // anchoring as plays land above, a list keeping its newest in view), and
+    // that closed a menu a few milliseconds after it opened, before a click.
     const onScroll = (event: Event) => {
       if (!surface.current?.contains(event.target as Node)) close(true);
     };
     window.addEventListener("pointerdown", onPointer, true);
-    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("wheel", onScroll, { capture: true, passive: true });
+    window.addEventListener("touchmove", onScroll, { capture: true, passive: true });
     window.addEventListener("resize", dismiss);
     window.addEventListener("blur", dismiss);
     return () => {
       window.removeEventListener("pointerdown", onPointer, true);
-      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("wheel", onScroll, true);
+      window.removeEventListener("touchmove", onScroll, true);
       window.removeEventListener("resize", dismiss);
       window.removeEventListener("blur", dismiss);
     };

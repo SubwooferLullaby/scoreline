@@ -298,7 +298,7 @@ function underway(game: PresentedGame, sport: BroadcastSport, regulationPeriods:
       return game.clock ? minuteText(game.clock, period) : "Live";
     default:
       if (!game.clock) return periodName(period, regulationPeriods);
-      return `${countdown(remaining(game.clock))} - ${periodName(period, regulationPeriods)}`;
+      return `${countdown(remaining(game.clock), sport === "basketball")} - ${periodName(period, regulationPeriods)}`;
   }
 }
 
@@ -330,9 +330,14 @@ export function periodName(period: number, regulation: number): string {
   return n === 1 ? "OT" : `${n}OT`;
 }
 
-/** "4:12", or under a minute "33.8" (ESPN's basketball clock). */
-export function countdown(seconds: number): string {
-  if (seconds < 60) return (Math.floor(seconds * 10 + 1e-6) / 10).toFixed(1);
+/**
+ * "4:12"; under a minute basketball's "33.8" (ESPN's basketball clock), any
+ * other sport's "0:33" (ESPN's football clock). Football's said "23.0" while
+ * stopped and "0:19" while running (the page's own tick), so the hero
+ * flipped between the two under every two-minute drill.
+ */
+export function countdown(seconds: number, tenths: boolean): string {
+  if (seconds < 60 && tenths) return (Math.floor(seconds * 10 + 1e-6) / 10).toFixed(1);
   const whole = Math.ceil(seconds);
   return `${Math.trunc(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
 }

@@ -317,7 +317,9 @@ export function timelineSpoken(marks: readonly TimelineMark[], current: number |
   let to = current != null ? ` to ${Math.trunc(current)} minutes` : "";
   if (wall && wall.now != null && wall.history.sport === "soccer") {
     const clock = new SoccerClock(historyStart(wall.history) ?? wall.domain.from, wall.history.periods, wall.now);
-    to = ` to ${Math.trunc(clock.minute(wall.now))} minutes`;
+    // Never "NaN minutes": a clock with nothing to measure from says no minute.
+    const minute = clock.minute(wall.now);
+    if (Number.isFinite(minute)) to = ` to ${Math.trunc(minute)} minutes`;
   }
   // The web says "1 goal" (the Swift writes "1 goals").
   return `Timeline${to}: ${plural(count("goal") + count("ownGoal"), "goal")}, ${plural(count("yellow"), "yellow card")}, ${plural(count("red"), "red card")}.`;

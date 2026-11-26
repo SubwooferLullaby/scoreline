@@ -58,6 +58,7 @@
 
 .teams {
   grid-column: 1;
+  grid-row: 1;
   display: flex;
   flex-direction: column;
   gap: calc(4 * var(--pt));
@@ -67,6 +68,7 @@
 /* A wide row's detail lane (DetailLane): its own column after the score, a line each, secondary ink. */
 .lane {
   grid-column: 2;
+  grid-row: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -190,8 +192,14 @@
   white-space: nowrap;
 }
 
-/* The line under the teams: the caption, or live, the situation (changing with each play). */
+/*
+ * The line under the teams: the caption, or live, the situation (changing with each play). Its own
+ * row of the grid, the row's whole width: free room under the status is its room too.
+ */
 .context {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  margin-top: calc(4 * var(--pt));
   font-size: var(--text-caption);
   font-variant-numeric: tabular-nums;
   color: var(--label-secondary);
@@ -204,6 +212,7 @@
 
 .status {
   grid-column: -2;
+  grid-row: 1;
   display: flex;
   flex-direction: column;
   align-items: flex-end;

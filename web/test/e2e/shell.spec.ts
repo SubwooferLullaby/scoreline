@@ -287,3 +287,45 @@ test.describe("PWA", () => {
     expect(await sw.text()).toContain("notificationclick");
   });
 });
+
+/**
+ * A cold load of the list loads ahead only what a click is likely to open
+ * (app/warm.ts): at idle the game page and the live games' sports; Settings
+ * as its button is pointed at, a sport's page as its row is. It used to load
+ * every followed sport's page and Settings at idle (75 files, 1.4 MB).
+ */
+test.describe("1440 cold load", () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+
+  test("the list warms the game page, and the rest on intent", async ({ page }) => {
+    const asked: string[] = [];
+    page.on("request", (r) => asked.push(new URL(r.url()).pathname));
+    const loaded = (file: string) => asked.some((p) => p.endsWith(file));
+    await page.goto("/?demo");
+    await expect(page.locator("aside [data-nav-id]").first()).toBeVisible({ timeout: 20_000 });
+    await expect.poll(() => loaded("/features/game/GamePage.tsx"), { timeout: 15_000 }).toBe(true);
+    await page.waitForTimeout(1500);
+    // The demo's live games (football, baseball, soccer, CS2, climbing) have their pages; nobody is near Settings.
+    expect(loaded("/features/game/football/FootballPage.tsx")).toBe(true);
+    expect(loaded("/features/settings/SettingsPage.tsx")).toBe(false);
+    await page.getByRole("button", { name: "Settings" }).hover();
+    await expect.poll(() => loaded("/features/settings/SettingsPage.tsx")).toBe(true);
+  });
+
+  test("with Save-Data, nothing loads ahead until a row is pointed at", async ({ page }) => {
+    await page.addInitScript(() => Object.defineProperty(navigator, "connection", { value: { saveData: true } }));
+    const asked: string[] = [];
+    page.on("request", (r) => asked.push(new URL(r.url()).pathname));
+    const loaded = (file: string) => asked.some((p) => p.endsWith(file));
+    await page.goto("/?demo");
+    const row = page.locator('aside a[data-nav-id][href*="league=nfl"]').first();
+    await expect(row).toBeVisible({ timeout: 20_000 });
+    await page.waitForTimeout(5000);
+    expect(loaded("/features/game/GamePage.tsx")).toBe(false);
+    expect(loaded("/features/game/football/FootballPage.tsx")).toBe(false);
+    // Pointed at, the row's game page and its sport's page load.
+    await row.hover();
+    await expect.poll(() => loaded("/features/game/football/FootballPage.tsx")).toBe(true);
+    expect(loaded("/features/game/GamePage.tsx")).toBe(true);
+  });
+});
