@@ -15,7 +15,7 @@ import { entries, isHeldUp, liveState, policy as sportPolicy, stoppage } from ".
 import { footballPossession, footballSituation } from "../../src/data/broadcast/presentFootball";
 import { BEAT_MS, nextRedraw, oddsSchedule, shownUntil } from "../../src/data/broadcast/presentOdds";
 import { PresentationClock } from "../../src/data/broadcast/presentationClock";
-import { isInterval, NOTHING_PRESENTED, noteOf, presentedStatus, stoppageOf, type PresentedGame } from "../../src/data/broadcast/presentedGame";
+import { isInterval, NOTHING_PRESENTED, noteOf, presentedStatus, stoppageOf, type PresentedClock, type PresentedGame } from "../../src/data/broadcast/presentedGame";
 import { parseEventTime, Stoppages, stoppageWords, type PTime } from "../../src/data/broadcast/timeline";
 import { NBA_PATH, recentPlays as nbaRecentPlays } from "../../src/data/basketball";
 import { EMPTY_DETAIL, type GameDetail } from "../../src/data/gameDetail";
@@ -260,6 +260,44 @@ describe("Broadcast: a shown score never steps back", () => {
     b.ingestSummary({ ...EMPTY_DETAIL, topIsHome: false, broadcastPlays: entries([p1, undone, reviewPlay], "basketball", nbaPolicy()) });
     // No review entry: a scorer's fix, quiet as before (no hold); the score falls back and the floor goes.
     expect(floored && b.presented.score?.home === 2 && b.presented.score.away === 0 && b.floor == null, "a score taken back on a told play drops the floor (the score the owner saw is overturned)").toBe(true);
+  });
+});
+
+/**
+ * The hero's game clock never runs backwards within a period (Broadcast's
+ * `forwardClock`), the cases from Thanksgiving's CHI at DET (2026-11-26),
+ * where a scoreboard "running" seen late, or a late "stopped", put the
+ * derived clock back up to 27 s from where the page had ticked it.
+ */
+describe("Broadcast: the game clock never runs backwards", () => {
+  const q = (elapsed: number, running: boolean, period = 3): PresentedClock => ({ period, elapsed, running, countsDown: true, length: 900 });
+
+  it("a late 'running' moves where the clock started: it holds where it was shown until the derived clock gets there", () => {
+    // Shown running from 14:06 (54 s played) 14.4 s ago; the scoreboard's late word says it started just now.
+    const held = Broadcast.forward(q(54, true), q(54, true), 14.4, false);
+    expect(held.clock).toEqual(q(68.4, false));
+    expect(held.behind).toBeCloseTo(14.4, 5);
+    // Caught up, it runs on from the derived clock.
+    const caught = Broadcast.forward(q(68.4, true), held.clock, 3, false);
+    expect(caught).toEqual({ clock: q(68.4, true), behind: 0 });
+  });
+
+  it("a late 'stopped' undoes a run: held at the time shown, not put back", () => {
+    expect(Broadcast.forward(q(130, false), q(130, true), 3.2, false).clock).toEqual(q(133.2, false));
+  });
+
+  it("forward moves, a new period and a feed reset go through", () => {
+    expect(Broadcast.forward(q(70, true), q(54, true), 14, false).clock).toEqual(q(70, true));
+    expect(Broadcast.forward(q(0, false, 4), q(880, true, 3), 40, false).clock).toEqual(q(0, false, 4));
+    expect(Broadcast.forward(q(120, false), q(160, false), 0, true).clock, "ESPN set the clock back: one step").toEqual(q(120, false));
+    // A running clock as shown stops at the period's end.
+    expect(Broadcast.forward(q(890, false), q(895, true), 30, false).clock).toEqual(q(900, false));
+  });
+
+  it("under a minute, football says 0:23 as ESPN does; basketball keeps its tenths", () => {
+    const game = (sport: "football" | "basketball"): PresentedGame => ({ ...NOTHING_PRESENTED, phase: { kind: "live" }, period: 2, clock: { period: 2, elapsed: (sport === "football" ? 900 : 720) - 23, running: false, countsDown: true, length: sport === "football" ? 900 : 720 } });
+    expect(presentedStatus(game("football"), "football", 4)).toBe("0:23 - 2nd");
+    expect(presentedStatus(game("basketball"), "basketball", 4)).toBe("23.0 - 2nd");
   });
 });
 

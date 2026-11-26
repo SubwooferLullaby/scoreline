@@ -45,7 +45,7 @@ import { behindFromClock, type BehindLive } from "./behindLive";
 import { BroadcastEngine, EMPTY_SNAPSHOT, type TimelineSnapshot } from "./engine";
 import { broadcastSport, plateTimes, policy as sportPolicy, readingFromEvent, readingFromStatus, timed, entries as laneEntries, type BroadcastSport } from "./lanes";
 import { PresentationClock } from "./presentationClock";
-import { clockless, isFinal, NOTHING_PRESENTED, presentedStatus, remaining, samePhase, samePresented, type PresentedGame } from "./presentedGame";
+import { clockless, isFinal, NOTHING_PRESENTED, presentedStatus, remaining, samePhase, samePresented, type PresentedClock, type PresentedGame } from "./presentedGame";
 import type { BroadcastTheaterSource } from "./theaterSource";
 import { broadcastAvailable } from "./switch";
 import type { StatcastAtBat } from "../mlb/statcast";
@@ -264,6 +264,8 @@ export class Broadcast implements BroadcastTheaterSource {
     this.memo = null;
     this.payloadMemo = null;
     this.released = [];
+    this.toldClock = null;
+    this.clockHoldUntil = null;
     this.flush();
   }
 
@@ -418,7 +420,56 @@ export class Broadcast implements BroadcastTheaterSource {
     }
     // The game clock holds while the presentation clock does (a stall).
     if (engine.clock.rate(now) === 0 && next.clock) next = { ...next, clock: { ...next.clock, running: false } };
-    return next;
+    return this.forwardClock(next, now, engine);
+  }
+
+  /** The last told play's own clock, to tell a feed reset from late news. */
+  private toldClock: { id: string; period: number; elapsed: number } | null = null;
+  /** While the clock holds where it was shown: when the derived clock reaches it again (a wake). */
+  private clockHoldUntil: PTime | null = null;
+
+  /**
+   * The game clock as shown never runs backwards within a period. It's
+   * derived afresh at every step from what's known at p (`presentedClock`:
+   * the last told play, the next, the fast lane's starts and stops), and the
+   * fast lane's word lands late: a "running" seen on the scoreboard moves
+   * where the clock started up to when it was seen, a late "stopped" undoes
+   * a run, a play arrives behind where the clock had run to. Each put the
+   * hero's clock back from where the page had ticked it (9:21 → 9:38; up to
+   * 27 s on Thanksgiving's CHI at DET). So the clock holds at the time shown
+   * until the derived one reaches it, then runs on from there. A feed reset
+   * (a told play whose own clock is earlier than the last told play's: ESPN
+   * set the clock back) steps back once, to it.
+   */
+  private forwardClock(next: PresentedGame, now: PTime, engine: BroadcastEngine<RawPlay>): PresentedGame {
+    this.clockHoldUntil = null;
+    const last = engine.timeline.lastTold;
+    const g = last?.entry.clock.elapsed;
+    let reset = false;
+    if (last && g != null && this.toldClock?.id !== last.entry.id) {
+      const before = this.toldClock;
+      reset = before != null && before.period === last.entry.period && g < before.elapsed - 0.5;
+      this.toldClock = { id: last.entry.id, period: last.entry.period, elapsed: g };
+    }
+    const { clock, behind } = Broadcast.forward(next.clock, this.presented.clock, now - this.presentedWall, reset);
+    if (clock === next.clock) return next;
+    // Running behind: it reaches the time shown that much p later.
+    if (next.clock?.running) this.clockHoldUntil = engine.clock.wallReaching(engine.p(now) + behind, now);
+    return { ...next, clock };
+  }
+
+  /**
+   * The clock to present (`forwardClock`): `next`, unless it's behind the
+   * clock as shown (`old`, published `since` seconds ago and ticked on by
+   * the page while it runs) in the same period, when it holds, stopped,
+   * where it's shown; `behind` is by how much. A reset steps. (pure; tested)
+   */
+  static forward(next: PresentedClock | null, old: PresentedClock | null, since: number, reset: boolean): { clock: PresentedClock | null; behind: number } {
+    if (!next || !old || reset || next.period !== old.period) return { clock: next, behind: 0 };
+    const end = old.countsDown && old.length > 0 ? old.length : Infinity;
+    const shown = Math.min(old.running ? old.elapsed + Math.max(since, 0) : old.elapsed, end);
+    if (next.elapsed >= shown - 0.05) return { clock: next, behind: 0 };
+    return { clock: { ...next, elapsed: shown, running: false }, behind: shown - next.elapsed };
   }
 
   private publish(next: PresentedGame, now: PTime, engine: BroadcastEngine<RawPlay>): void {
@@ -463,6 +514,8 @@ export class Broadcast implements BroadcastTheaterSource {
     }
     // The floor lapses on its own.
     if (this.floor) at = Math.min(at ?? Infinity, this.floorSince + Broadcast.floorTimeout + 0.01);
+    // A held clock runs again once the derived one has caught up (forwardClock).
+    if (this.clockHoldUntil != null) at = Math.min(at ?? Infinity, this.clockHoldUntil + 0.01);
     // Moments for plays the timeline doesn't know expire after a minute.
     let oldest = Infinity;
     for (const p of this.pending.values()) oldest = Math.min(oldest, p.since);
@@ -604,10 +657,17 @@ export class Broadcast implements BroadcastTheaterSource {
     const sport = this.sport;
     if (!this.active || event.content.kind !== "match" || !sport || !engine) return event;
     const game = this.presented;
-    if (game.phase.kind === "pregame" && game.score == null) return event;
+    // Nothing presented yet (the first summary is on its way): no clock. The
+    // scoreboard's is live, a delay ahead of the one about to be presented, so
+    // showing it put the clock back the moment the broadcast began (22' → 21').
     // A page reads its event many times a render; it changes when the game does.
     const memo = this.eventMemo;
     if (memo && memo.input === event && memo.game === game && sameScore(memo.floor, this.floor) && memo.wall === this.presentedWall) return memo.shown;
+    if (game.phase.kind === "pregame" && game.score == null) {
+      const shown = event.state === "live" ? withChanges(event, { clock: null, detail: null }) : event;
+      this.eventMemo = { input: event, game, floor: this.floor, wall: this.presentedWall, shown };
+      return shown;
+    }
     let { top, bottom } = event.content;
     const score = Broadcast.shown(game.score, this.floor);
     if (score) {

@@ -56,4 +56,44 @@ test.describe("live games", () => {
     await expect(timeline.getByLabel(/^Timeline to \d+ minutes/).first()).toBeAttached({ timeout: 15_000 });
     expect(errors, errors.join("\n")).toEqual([]);
   });
+
+  /**
+   * The hero's game clock, read every second for a minute of a live game,
+   * never runs backwards within a period (Broadcast's `forwardClock`; on
+   * Thanksgiving's CHI at DET it went back by up to 27 s, 17 times in 40
+   * minutes). Under a minute a football clock says "0:23", never "23.0".
+   */
+  for (const { sport, leagues, name } of [
+    { name: "NFL", sport: "football", leagues: ["nfl"] },
+    { name: "college football", sport: "football", leagues: ["college-football"] },
+    { name: "NBA", sport: "basketball", leagues: ["nba", "wnba"] },
+    { name: "soccer", sport: "soccer", leagues: SOCCER },
+  ] as const) {
+    test(`a live ${name} game's clock never runs backwards`, async ({ page }) => {
+      test.setTimeout(150_000);
+      const game = await liveGame(page, sport, leagues);
+      test.skip(game == null, `No live ${name} game now`);
+      await page.goto(`/game/espn-${game!.id}?league=${game!.league}`);
+      const text = page.locator('[class*="_heroWrap_"] [class*="_liveLine_"] [class*="_text_"]').first();
+      await expect(text).toBeVisible({ timeout: 30_000 });
+      const read = (s: string): { period: string; elapsed: number } | null => {
+        const down = /^(?:(\d+):(\d\d)|(\d+(?:\.\d)?)) - (.+)$/.exec(s);
+        if (down) return { period: down[4]!, elapsed: -(down[3] != null ? Number(down[3]) : Number(down[1]) * 60 + Number(down[2])) };
+        const up = /^(\d+)'(?:\+(\d+)')?$/.exec(s);
+        return up ? { period: Number(up[1]) > 45 ? "2nd" : "1st", elapsed: Number(up[1]) + Number(up[2] ?? 0) } : null;
+      };
+      const seen: string[] = [];
+      let last: { period: string; elapsed: number; text: string } | null = null;
+      for (let i = 0; i < 60; i++) {
+        const s = ((await text.textContent()) ?? "").trim();
+        seen.push(s);
+        const r = read(s);
+        if (sport === "football") expect(s, "a football clock under a minute").not.toMatch(/^\d+\.\d - /);
+        if (r && last && r.period === last.period) expect(r.elapsed, `${last.text} → ${s}`).toBeGreaterThanOrEqual(last.elapsed);
+        if (r) last = { ...r, text: s };
+        await page.waitForTimeout(1000);
+      }
+      console.log(`${name} ${game!.id}: ${[...new Set(seen)].join(" | ")}`);
+    });
+  }
 });
