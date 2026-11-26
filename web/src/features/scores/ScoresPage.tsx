@@ -16,6 +16,7 @@ import { Button, Chip, EmptyState, ErrorState, Icon, IconButton, SegmentedContro
 import { plural, updatedAgo, clockTime } from "../../data/format";
 import type { NavState } from "../../app/layout";
 import { isTyping } from "../../app/navigation";
+import { onIdle, warmGamePage, warmGames, warmSettings } from "../../app/warm";
 import { useNow } from "../../state/clock";
 import { pin } from "../../state/pin";
 import { useScoreboard } from "../../state/scores";
@@ -42,6 +43,25 @@ export function ScoresPage({ variant }: { readonly variant: "page" | "sidebar" }
   const active = variant === "sidebar" || pathname === "/";
 
   const onHover = useCallback((id: string) => setHighlight((h) => (h.id === id && !h.keyboard ? h : { id, keyboard: false })), []);
+
+  // The page a click is likely to open, loaded ahead of it (app/warm.ts): once
+  // the list has rows, at idle, the game page and the games live now; and the
+  // row the pointer, the keys or a finger is on.
+  const hasRows = scores.sections.some((s) => s.events.length > 0);
+  const liveKey = scores.sections.flatMap((s) => s.events.filter((e) => e.state === "live").map((e) => e.id)).join();
+  useEffect(() => {
+    if (!hasRows) return;
+    const ids = new Set(liveKey.split(","));
+    return onIdle(() => {
+      warmGamePage();
+      warmGames(scores.sections.flatMap((s) => s.events.filter((e) => ids.has(e.id))));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasRows, liveKey]);
+  const highlighted = highlight.id != null ? scores.event(highlight.id) : undefined;
+  useEffect(() => {
+    if (highlighted) warmGames([highlighted]);
+  }, [highlighted]);
 
   useEffect(() => {
     if (!active) return;
@@ -127,7 +147,7 @@ export function ScoresPage({ variant }: { readonly variant: "page" | "sidebar" }
           {/* Sports: every sport, one search, and Following a row away (34ba1dd). */}
           <IconButton icon="sportscourt" label="Sports" onClick={() => navigate("/sports")} />
           <RefreshButton onRefresh={scores.refresh} />
-          <IconButton icon="sliders" label="Settings" shortcut="," onClick={() => navigate("/settings")} />
+          <IconButton icon="sliders" label="Settings" shortcut="," onClick={() => navigate("/settings")} onPointerEnter={warmSettings} onFocus={warmSettings} />
         </div>
       </header>
 
