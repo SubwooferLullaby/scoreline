@@ -726,7 +726,8 @@ const demo: Fetcher = async (url) => {
     if (path.includes("football/nfl")) {
       const replayed = await footballBoardEvent();
       return Promise.all([fixture("espn-nfl-live.synthetic.json"), fixture("espn-nfl-scoreboard.json")]).then(([a, b]) =>
-        animate({ events: [replayed, ...(a.events as []), ...(b.events as [])] }, path),
+        // The fixture's second NE @ CHI (401873099) is the unit tests' between-snaps copy: on the board it'd show the game twice.
+        animate({ events: [replayed, ...(a.events as { id?: string }[]).filter((e) => e.id !== "401873099"), ...(b.events as [])] }, path),
       );
     }
     if (path.includes("baseball/mlb")) return live("espn-mlb-live.synthetic.json", "espn-mlb-scoreboard.json");

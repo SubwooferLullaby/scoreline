@@ -10,6 +10,8 @@ describe("theater status", () => {
     expect(heartbeatLabel(4, "ESPN")).toBe("Live · 4s");
     expect(heartbeatLabel(59, "ESPN")).toBe("Live · 59s");
     expect(heartbeatLabel(125, "ESPN")).toBe("Waiting for ESPN · 2m");
+    expect(heartbeatLabel(59 * 60 + 59, "ESPN")).toBe("Waiting for ESPN · 59m");
+    expect(heartbeatLabel(3 * 3600 + 120, "ESPN")).toBe("Waiting for ESPN · 3h");
   });
 
   it("sizes the tag from the well and keys the flip by game", () => {

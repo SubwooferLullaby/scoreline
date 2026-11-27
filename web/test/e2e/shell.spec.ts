@@ -199,6 +199,19 @@ test.describe("1440 light: keys, sections and Settings", () => {
     await expect.poll(() => main.evaluate((m) => Math.round(m.scrollTop))).toBeGreaterThan(250);
   });
 
+  test("with nothing open, the pane offers the live games, and one opens", async ({ page }) => {
+    await withSettings(page, LEAGUES);
+    await page.goto("/?demo");
+    await waitForGames(page);
+    const live = page.getByRole("navigation", { name: "Live now" });
+    const games = live.getByRole("link");
+    await expect(games.first()).toBeVisible();
+    expect(await games.count()).toBeLessThanOrEqual(3);
+    await games.first().click();
+    await expect(page).toHaveURL(/\/game\//);
+    await expect(live).toHaveCount(0);
+  });
+
   test("tiles: the round race, the pin and Up Next's schedule link", async ({ page }) => {
     await withSettings(page, { ...LEAGUES, landingView: "tiles" });
     // The demo's boards were recorded on Oct 27: with the page's clock there, their next games are ahead (Up Next), whatever today is.

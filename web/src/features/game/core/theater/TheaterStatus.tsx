@@ -55,10 +55,11 @@ export function TheaterStatusTag({ tag, tint, height }: { tag: string | null; ti
   );
 }
 
-/** "Live · 4s", "Live · 45s", then "Waiting for ESPN · 2m". (pure; tested) */
+/** "Live · 4s", "Live · 45s", "Waiting for ESPN · 2m", then hours ("· 3h", a rain delay), never thousands of minutes. (pure; tested) */
 export function heartbeatLabel(seconds: number, source: string): string {
   if (seconds < 60) return `Live · ${seconds}s`;
-  return `Waiting for ${source} · ${Math.floor(seconds / 60)}m`;
+  const minutes = Math.floor(seconds / 60);
+  return `Waiting for ${source} · ${minutes < 60 ? `${minutes}m` : `${Math.floor(minutes / 60)}h`}`;
 }
 
 /**

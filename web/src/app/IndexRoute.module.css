@@ -5,3 +5,62 @@
   height: 100dvh;
   padding-bottom: 8vh;
 }
+
+/* Live now: up to three games, as quiet rows under the message. */
+.live {
+  width: min(calc(320 * var(--pt)), 100%);
+  margin-top: calc(18 * var(--pt));
+  text-align: left;
+}
+
+.live ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.liveTitle {
+  margin: 0 0 calc(4 * var(--pt));
+  padding: 0 calc(10 * var(--pt));
+  color: var(--label-secondary);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.game {
+  display: flex;
+  align-items: center;
+  gap: calc(8 * var(--pt));
+  padding: calc(7 * var(--pt)) calc(10 * var(--pt));
+  border-radius: var(--radius-row);
+  color: var(--label);
+  font-size: var(--text-callout);
+  text-decoration: none;
+}
+
+.game span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .game:hover {
+    background: var(--fill-hover);
+    text-decoration: none;
+  }
+}
+
+.game:active {
+  background: var(--fill-press);
+}
+
+.dot {
+  flex: none;
+  width: calc(6 * var(--pt));
+  height: calc(6 * var(--pt));
+  border-radius: 50%;
+  background: var(--live);
+}
