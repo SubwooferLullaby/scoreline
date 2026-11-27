@@ -90,6 +90,8 @@ try {
         },
         [{ ...SETTINGS, ...(shot.settings ?? {}) }],
       );
+      // The sign-in gate: on localhost the dev build lets the e2e harness's stand-in cookie through (worker/auth.ts devSession).
+      if (/^https?:\/\/(localhost|127\.0\.0\.1)[:/]/.test(BASE)) await context.addCookies([{ name: "scoreline_dev_session", value: "1", url: BASE }]);
       const page = await context.newPage();
       const out = (suffix = "") => join(RAW, `${shot.name}-${theme}${suffix}.png`);
       const started = Date.now();

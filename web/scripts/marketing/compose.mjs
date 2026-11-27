@@ -149,7 +149,7 @@ try {
     if (!wanted(c.name)) continue;
     for (const theme of c.themes ?? ["light", "dark"]) {
       if (c.kind === "mac" && imported.has(`${c.name}-${theme}`)) continue;
-      const spec = { width: 2400, height: 1500, theme, kind: c.kind, caption: c.caption, url: c.url ?? "scoreline-web.lame-o.workers.dev", ...c.spec };
+      const spec = { width: 2400, height: 1500, theme, kind: c.kind, caption: c.caption, url: c.url ?? "scoreline.fyi", ...c.spec };
       if (c.kind === "browser") spec.image = raw(c.source, theme);
       if (c.kind === "phones") spec.phones = c.phones.map((p) => { const image = raw(p.source, theme); return { image, ...(image ? topEdge(image) : {}) }; });
       if (c.kind === "mac") Object.assign(spec, { panels: c.panels.map((p) => ({ image: macRaw(p.source, theme), label: p.label })), icon: pathToFileURL(join(repo, "web/public/icon-512.png")).href });
@@ -183,7 +183,7 @@ try {
       }
       const spec = g.device === "phone"
         ? { kind: "bare", theme, width: 520, height: Math.round(520 * 2.1305) + 2, phone: { image, ...topEdge(image) } }
-        : { kind: "bare", theme, width: 1200, height: Math.round(1200 * (52 / 1280)) + 750, image, url: g.url ?? "scoreline-web.lame-o.workers.dev" };
+        : { kind: "bare", theme, width: 1200, height: Math.round(1200 * (52 / 1280)) + 750, image, url: g.url ?? "scoreline.fyi" };
       const png = join(TMP, `page-${g.name}-${theme}.png`);
       await render(spec, png);
       const size = webp(png, join(DOCS, "screenshots/web/pages", `${g.name}-${theme}.webp`), { quality: 80 });
@@ -209,8 +209,8 @@ try {
     await ensurePage();
     mkdirSync(join(DOCS, "buttons"), { recursive: true });
     for (const b of [
-      { name: "download-mac", label: "Download for Mac", icon: "download", variant: "primary" },
-      { name: "try-web", label: "Try it on the web", icon: "web", variant: "secondary" },
+      { name: "download-mac", label: "Download for Mac", icon: "download", variant: "secondary" },
+      { name: "try-web", label: "Try it on the web", icon: "web", variant: "primary" },
     ]) {
       for (const theme of ["light", "dark"]) {
         await page.setViewportSize({ width: 900, height: 200 });
@@ -232,7 +232,7 @@ try {
     const panel = social.macPanel ? [".webp", ".png"].map((ext) => join(MAC_RAW, "panels", `${social.macPanel}-dark${ext}`)).find((f) => existsSync(f)) : null;
     if (image || panel) {
       const png = join(TMP, "social.png");
-      await render({ kind: "social", theme: "dark", width: 1280, height: 640, image, panel: panel ? pathToFileURL(panel).href : undefined, menubarText: social.menubarText, icon: pathToFileURL(join(repo, "web/public/icon-512.png")).href, url: "scoreline-web.lame-o.workers.dev", tagline: social.tagline, tags: social.tags }, png);
+      await render({ kind: "social", theme: "dark", width: 1280, height: 640, image, panel: panel ? pathToFileURL(panel).href : undefined, menubarText: social.menubarText, icon: pathToFileURL(join(repo, "web/public/icon-512.png")).href, url: social.url, tagline: social.tagline, tags: social.tags }, png);
       const out = join(DOCS, "social-preview.png");
       execFileSync("magick", [png, "-strip", "-define", "png:compression-level=9", out]);
       if (statSync(out).size > 1_000_000) execFileSync("magick", [png, "-strip", "-dither", "FloydSteinberg", "-colors", "256", "-define", "png:compression-level=9", out]);

@@ -59,4 +59,6 @@ node scripts/marketing/readme-gallery.mjs     # the README's "Every page" galler
 node scripts/marketing/check-readme.mjs       # every README image resolves; sizes
 ```
 
-The first two take name filters (`node scripts/marketing/capture.mjs mlb nfl`) to redo a few shots; `compose.mjs mac-` only carries the Mac renders over. The README's pictures are slots that readme-gallery.mjs fills with the Mac app's image where it exists and the web's otherwise, so it never shows a missing one.
+The first two take name filters (`node scripts/marketing/capture.mjs mlb nfl`) to redo a few shots; `compose.mjs mac-` only carries the Mac renders over. The README's pictures are slots that readme-gallery.mjs fills from shots.config.mjs's `readmeSlots`: the web's images first, the Mac app's only for the scoring slide and the Mac section, and never a missing one.
+
+Off a Mac, the app's system font falls back to whatever Linux has. Point fontconfig at Inter for the captures so they read like the Mac's: a `fonts.conf` that includes `/etc/fonts/fonts.conf`, adds the folder holding `InterVariable.ttf`, and prefers "Inter Variable" for `sans-serif` and `system-ui`, then `FONTCONFIG_FILE=<it> node scripts/marketing/capture.mjs`. compose.mjs needs `magick` (ImageMagick 7) and `cwebp` on the PATH; both have portable Linux builds.

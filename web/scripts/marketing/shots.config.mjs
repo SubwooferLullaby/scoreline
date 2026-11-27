@@ -29,6 +29,9 @@ const NBA = "/game/espn-401909869?demo&league=nba&nba=16";
 const CS2 = "/game/cs-132240?demo&cs=17";
 const CLIMB = "/game/ifsc-1489-0?demo&climb=39";
 
+/** Waits for a scoring slide to land on the game page's hero. */
+const slide = (page) => page.locator("[data-slide-host]").first().waitFor({ state: "attached", timeout: 60_000 });
+
 const settled = (ms) => async (page, h) => {
   await h.settle(ms);
 };
@@ -52,7 +55,8 @@ export const captures = [
     path: SOCCER,
     prepare: async (page, h) => {
       await h.scores();
-      await h.settle(4000);
+      // After the goal arrives: before it, the replay's recorded wallclocks read as hours of waiting.
+      await h.settle(26000);
       const row = page.locator("aside [data-nav-id]").first();
       const box = await row.boundingBox();
       await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.45, { button: "right" });
@@ -61,20 +65,20 @@ export const captures = [
   },
 
   // Each sport's live page, its isometric view mid-play (frames timed from the page opening; pick one in compositions).
-  { name: "mlb", path: MLB, frames: [6000, 6800, 7600, 9000, 9600, 10400], prepare: async (page, h) => { await h.scores(); } },
+  // Timed from the scoring slide's arrival (`data-slide-host`): a fixed delay from load drifts by seconds between runs.
+  { name: "mlb", path: MLB, framesFrom: "prepare", frames: [1200], framesOnly: true, prepare: async (page, h) => { await h.scores(); await slide(page); } },
   {
     name: "nfl",
     path: NFL,
     framesFrom: "prepare",
-    frames: [4200, 4800, 5400, 6200],
+    frames: [1200, 6000],
     framesOnly: true,
     prepare: async (page, h) => {
       await h.scores();
-      await h.sleep(2600);
-      await h.scrollTo('section[data-section="field"]', 64);
+      await slide(page);
     },
   },
-  { name: "soccer", path: SOCCER, frames: [9500, 10500, 11500, 12500, 13500, 14500, 15500], framesOnly: true, prepare: async (page, h) => { await h.scores(); } },
+  { name: "soccer", path: SOCCER, frames: [16500, 18000], framesOnly: true, prepare: async (page, h) => { await h.scores(); } },
   { name: "nba", path: NBA, prepare: async (page, h) => { await h.scores(); await page.getByText("Buzzer-beater", { exact: true }).first().waitFor({ timeout: 30_000 }).catch(() => {}); await h.settle(800); } },
   { name: "nba-charts", path: NBA, prepare: async (page, h) => { await h.scores(); await h.settle(12000); await h.scrollTo('section[data-section="flow"]', 64); } },
   { name: "cfb", path: "/game/espn-401856732?demo&league=college-football", prepare: settled(3000) },
@@ -85,6 +89,7 @@ export const captures = [
   // The isometric views on their own (the dev render harness, /dev/theater, frozen at an instant), for the feature grid.
   { name: "theater-mlb", path: "/dev/theater?only=Home&t=2.6", element: "canvas", scale: 4, prepare: settled(2500) },
   { name: "theater-nfl", path: "/dev/theater/football?only=Touchdown&t=2.6", element: "canvas", scale: 4, prepare: settled(2500) },
+  { name: "theater-nba", path: "/dev/theater/basketball?only=Buzzer&t=1.6", element: "canvas", scale: 4, prepare: settled(2500) },
   { name: "theater-soccer", path: "/dev/theater/soccer?only=Gabriel&t=6.4", element: "canvas", scale: 4, prepare: settled(2500) },
 
   // Everything around the game (live feeds).
@@ -111,7 +116,7 @@ export const captures = [
   { name: "phone-scores", device: "phone", path: "/?demo", prepare: async (page, h) => { await h.scores(); await h.settle(3000); } },
   { name: "phone-tiles", device: "phone", path: "/?demo", prepare: async (page, h) => { await h.scores(); await page.getByRole("radio", { name: "Tiles" }).click(); await h.settle(3000); } },
   { name: "phone-mlb", device: "phone", path: MLB, frames: [6000, 6800, 7600, 9000, 9600, 10400], framesOnly: true },
-  { name: "phone-nfl", device: "phone", path: NFL, prepare: settled(9000) },
+  { name: "phone-nfl", device: "phone", path: NFL, prepare: settled(14000) },
 ];
 
 // MARK: - Compositions (2400×1500 and 1600×1000)
@@ -123,15 +128,14 @@ export const compositions = [
     caption: { title: "Every play, *replayed*.", subtitle: "In isometric 3D, the moment it happens." },
     cards: [
       { source: "theater-mlb", title: "Baseball", detail: "Statcast-accurate flights" },
-      // The web has no basketball view yet: the Mac app's, cut from its README tile (the buzzer-beater).
-      { mac: "09-basketball-tile", crop: [570, 476, 892, 446], title: "Basketball", detail: "Every made basket", optional: true },
+      { source: "theater-nba", title: "Basketball", detail: "Every made basket" },
       { source: "theater-nfl", title: "Football", detail: "Every snap of the drive" },
       { source: "theater-soccer", title: "Soccer", detail: "Every shot, every angle" },
     ],
   },
-  { name: "game-mlb", kind: "browser", source: "mlb@9600", caption: { title: "Pitch by *pitch*.", subtitle: "The count, the runners, the strike zone and every ball in play." } },
-  { name: "game-nfl", kind: "browser", source: "nfl@4800", caption: { title: "Snap by *snap*.", subtitle: "The drive on the field, down and distance, and win probability." } },
-  { name: "game-soccer", kind: "browser", source: "soccer@13500", caption: { title: "Every chance, *mapped*.", subtitle: "The live pitch, the shot map and the match timeline." } },
+  { name: "game-mlb", kind: "browser", source: "mlb@1200", caption: { title: "Pitch by *pitch*.", subtitle: "The count, the runners, the strike zone and every ball in play." } },
+  { name: "game-nfl", kind: "browser", source: "nfl@1200", caption: { title: "Snap by *snap*.", subtitle: "The drive on the field, down and distance, and win probability." } },
+  { name: "game-soccer", kind: "browser", source: "soccer@18000", caption: { title: "Every chance, *mapped*.", subtitle: "The live pitch, the shot map and the match timeline." } },
   { name: "game-nba", kind: "browser", source: "nba", caption: { title: "Every shot, *charted*.", subtitle: "The shot chart, the game's flow, leaders and the box score." } },
   { name: "esports", kind: "browser", source: "cs2", caption: { title: "Round by *round*.", subtitle: "S-tier Counter-Strike 2: every map, round and economy swing." } },
   { name: "climbing", kind: "browser", source: "climbing", caption: { title: "Hold by *hold*.", subtitle: "The wall, every climber's high point and the live ranking." } },
@@ -148,7 +152,7 @@ export const compositions = [
     name: "phones",
     kind: "phones",
     caption: { title: "Also on the *web*.", subtitle: "Installs to your phone's home screen, with the same live pages." },
-    phones: [{ source: "phone-scores" }, { source: "phone-mlb@10400" }],
+    phones: [{ source: "phone-scores" }, { source: "phone-mlb@9600" }],
   },
 ];
 
@@ -158,10 +162,10 @@ export const gallery = [
   { name: "scores", source: "scores-list", label: "Scores, beside a live game" },
   { name: "tiles", source: "scores-tiles", label: "Tiles" },
   { name: "game-menu", source: "scores-menu", label: "A game's menu: follow, pin, schedule" },
-  { name: "mlb", source: "mlb@9600", label: "Baseball, live" },
-  { name: "nfl", source: "nfl@4800", label: "NFL, live" },
+  { name: "mlb", source: "mlb@1200", label: "Baseball, live" },
+  { name: "nfl", source: "nfl@6000", label: "NFL, live" },
   { name: "college-football", source: "cfb", label: "College football, with the conference table" },
-  { name: "soccer", source: "soccer@13500", label: "Soccer, live" },
+  { name: "soccer", source: "soccer@18000", label: "Soccer, live" },
   { name: "nba", source: "nba", label: "NBA, live" },
   { name: "nba-charts", source: "nba-charts", label: "NBA: game flow and the box score" },
   { name: "cs2", source: "cs2", label: "Counter-Strike 2, live" },
@@ -187,7 +191,7 @@ export const gallery = [
   { name: "settings-league", source: "settings-league", label: "A league: fixtures, results and teams to follow" },
   { name: "phone-scores", source: "phone-scores", device: "phone", label: "Scores on a phone" },
   { name: "phone-tiles", source: "phone-tiles", device: "phone", label: "Tiles on a phone" },
-  { name: "phone-mlb", source: "phone-mlb@10400", device: "phone", label: "A live game on a phone" },
+  { name: "phone-mlb", source: "phone-mlb@9600", device: "phone", label: "A live game on a phone" },
   { name: "phone-nfl", source: "phone-nfl", device: "phone", label: "Football on a phone" },
 ];
 
@@ -220,68 +224,38 @@ export const macImports = [
 /**
  * The README's pictures, each between `<!-- slot:<key>:start -->` and `<!-- slot:<key>:end -->`.
  * readme-gallery.mjs writes the first option whose files all exist (light and dark), so the README
- * prefers the Mac app's images, falls back to the web's, and never shows a broken or missing one;
- * an empty option leaves the slot empty. An option is rows of images; a row shares the width.
+ * never shows a broken or missing one; an empty option leaves the slot empty. The web comes first
+ * (the owner's direction since 2026-11-04): every slot is the web's, but the scoring slide's and
+ * the Mac section's, which only the Mac app's renders show. An option is rows of images; a row shares the width.
  */
 const mac = (name, alt) => ({ dir: "docs/screenshots/mac", name, alt });
 const web = (name, alt) => ({ dir: "docs/screenshots/web", name, alt });
 export const readmeSlots = [
-  {
-    key: "hero",
-    options: [
-      [[mac("hero", "Scoreline's panel open under the Mac menu bar: a live World Series game, its home run replayed in the isometric view")]],
-      [[web("scores", "Scoreline: every live game in the sidebar, beside a live NBA game's shot chart and box score")]],
-    ],
-  },
+  { key: "hero", options: [[[web("game-nfl", "Scoreline in a browser: the Texans tie the Giants 21–21 with 52 seconds left, the touchdown's broadcast slide across the game page, the drive replayed on the animated field beside the scores")]]] },
   { key: "isometric", options: [[[web("isometric", "Isometric views: a home run on its Statcast flight, a buzzer-beater three, a touchdown, and a header into the net")]]] },
   { key: "scoring-slide", options: [[[mac("scoring-slide", "The scoring slide: a home run's bar sliding in from the scoring team's side, in its colors, with who and how far")]], []] },
   {
     key: "games",
     options: [
       [
-        [mac("football", "A live NFL game: the touchdown replayed, the drive on the field"), mac("soccer", "A live Premier League match: the goal rebuilt, the shot map")],
-        [mac("at-bat", "The at-bat, pitch by pitch, with MLB's pitch types and speeds"), mac("spray-chart", "A spray chart of every ball in play"), mac("shot-chart", "An NBA shot chart")],
-      ],
-      [[mac("football", "A live NFL game: the touchdown replayed, the drive on the field"), mac("soccer", "A live Premier League match: the goal rebuilt, the shot map")]],
-      [
         [web("game-mlb", "A live World Series game: at the plate, the isometric view of a double, the line score and win probability")],
-        [web("game-nfl", "A live NFL game: the drive on the field"), web("game-nba", "A live NBA game: the shot chart and game flow"), web("game-soccer", "A live Premier League match: the pitch and the shot map")],
+        [web("game-nba", "A live NBA game: the shot chart and game flow"), web("game-soccer", "A live Premier League match: the pitch and the shot map")],
       ],
     ],
   },
+  { key: "schedules", options: [[[web("schedule", "The schedule: today's games across every league")], [web("standings", "The Premier League table, moving with live scores"), web("bracket", "A CS2 tournament: the Swiss stage and the playoff bracket")]]] },
+  { key: "people", options: [[[web("team", "A team page: results, form, the schedule and the roster"), web("player", "A player page: the season, the game log and the career")]]] },
+  { key: "esports", options: [[[web("esports", "A live Counter-Strike 2 match: maps, rounds and the economy"), web("climbing", "A live climbing final: the wall, high points and the ranking")]]] },
+  { key: "teams", options: [[[web("follow", "A game's menu: follow either team, show the score in the tab, go to a team's schedule"), web("settings", "Settings: your teams, your sports and their order, appearance and alerts")]]] },
+  { key: "phones", options: [[[web("tiles", "Scoreline in a browser: every live game as tiles, beside a live NFL game")], [web("phones", "Scoreline on two phones: the scores, and a live game")]]] },
   {
-    key: "schedules",
+    key: "mac",
     options: [
-      [[mac("schedules", "Schedules, results and standings")], [mac("bracket", "The MLB postseason bracket")]],
-      [[web("schedule", "The schedule: today's games across every league")], [web("standings", "The Premier League table, moving with live scores"), web("bracket", "A CS2 tournament: the Swiss stage and the playoff bracket")]],
-    ],
-  },
-  {
-    key: "people",
-    options: [
-      [[mac("people", "A team page and a player page")]],
-      [[web("team", "A team page: results, form, the schedule and the roster"), web("player", "A player page: the season, the game log and the career")]],
-    ],
-  },
-  {
-    key: "esports",
-    options: [
-      [[mac("counter-strike", "A live Counter-Strike 2 match: maps, rounds and the economy"), mac("climbing", "A live climbing final: the wall, high points and the ranking")]],
-      [[web("esports", "A live Counter-Strike 2 match: maps, rounds and the economy"), web("climbing", "A live climbing final: the wall, high points and the ranking")]],
-    ],
-  },
-  {
-    key: "teams",
-    options: [
-      [[mac("menubar", "The menu bar, close up: Scoreline's item with a followed team's live score, MIL 3–2 TB, Top 12th")], [mac("scores", "Scores as a list and as tiles, your teams first"), mac("settings", "Settings")]],
-      [[mac("scores", "Scores as a list and as tiles, your teams first")]],
-      [[web("follow", "A game's menu: follow either team, show the score in the tab, go to a team's schedule"), web("settings", "Settings: your teams, your sports and their order, appearance and alerts")]],
-    ],
-  },
-  {
-    key: "web",
-    options: [
-      [[web("tiles", "Scoreline in a browser: every live game as tiles, beside a live NFL game")], [web("phones", "Scoreline on two phones: the scores, and a live game")]],
+      [
+        [mac("hero", "Scoreline's panel open under the Mac menu bar: a live World Series game, its home run replayed in the isometric view")],
+        [mac("menubar", "The menu bar, close up: Scoreline's item with a followed team's live score, MIL 3–2 TB, Top 12th")],
+      ],
+      [],
     ],
   },
 ];
@@ -312,9 +286,9 @@ export const macGallery = [
 
 /** GitHub's social preview. */
 export const social = {
-  macPanel: "baseball",
-  menubarText: "MIL 3–2 TB · Top 12th",
-  source: "mlb@9600",
-  tagline: "Live scores in your Mac's menu bar.\nEvery home run, basket, touchdown\nand goal, replayed in 3D.",
+  macPanel: null,
+  source: "nfl@1200",
+  url: "scoreline.fyi",
+  tagline: "Live scores, told play by play.\nEvery snap, pitch and shot, replayed\non a small animated field.",
   tags: "MLB · NFL · NBA · Soccer · CS2 · Climbing",
 };

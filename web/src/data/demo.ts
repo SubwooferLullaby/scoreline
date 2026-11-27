@@ -717,17 +717,19 @@ const demo: Fetcher = async (url) => {
   }
   if (u.host === "site.api.espn.com" && path.endsWith("/scoreboard")) {
     if (!u.searchParams.has("dates")) polls.set(path, (polls.get(path) ?? -1) + 1);
+    // The synthetic boards' second copies of a game are the unit tests' variants (NE @ CHI between snaps,
+    // WSH @ CHA after a non-scoring play): on a board they'd show the game twice.
+    const screened = (events: unknown) => (events as { id?: string }[]).filter((e) => e.id !== "401873099" && e.id !== "401900001") as [];
     const live = (name: string, recorded: string) =>
       Promise.all([fixture(name), fixture(recorded)]).then(async ([a, b]) => {
-        const board = animate({ events: [...(a.events as []), ...(b.events as [])] }, path);
-        await patchBoard(board, path);
-        return board;
+        const animated = animate({ events: [...screened(a.events), ...(b.events as [])] }, path);
+        await patchBoard(animated, path);
+        return animated;
       });
     if (path.includes("football/nfl")) {
       const replayed = await footballBoardEvent();
       return Promise.all([fixture("espn-nfl-live.synthetic.json"), fixture("espn-nfl-scoreboard.json")]).then(([a, b]) =>
-        // The fixture's second NE @ CHI (401873099) is the unit tests' between-snaps copy: on the board it'd show the game twice.
-        animate({ events: [replayed, ...(a.events as { id?: string }[]).filter((e) => e.id !== "401873099"), ...(b.events as [])] }, path),
+        animate({ events: [replayed, ...screened(a.events), ...(b.events as [])] }, path),
       );
     }
     if (path.includes("baseball/mlb")) return live("espn-mlb-live.synthetic.json", "espn-mlb-scoreboard.json");
