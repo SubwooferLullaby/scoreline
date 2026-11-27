@@ -32,6 +32,7 @@ import {
   parseSocketMessage,
   tokens,
   twoWayMarket,
+  withEventNames,
   type GameKey,
 } from "../../src/data/odds/polymarket";
 import { findMarket, OddsFeed, resetOdds, setOddsEnvironment, type OddsGame } from "../../src/state/odds";
@@ -135,6 +136,21 @@ describe("the market", () => {
     expect(traded(m.volume)).toBe("$3.1M traded");
     // The same market, the teams the other way round: the token follows the team, not the order.
     expect(twoWayMarket(nbaMarket, "x", { top: gswMin.bottom, bottom: gswMin.top })!.tokens[0]!.token).not.toBe(WARRIORS);
+  });
+
+  it("reads a college market named by school, through the matched event's own names", () => {
+    // ESPN writes "App State" and "UL Monroe"; Polymarket's event names the mascots, its market the schools.
+    const key = { start: Date.parse("2026-11-27T20:00:00Z"), top: ["App State", "Mountaineers", "App State Mountaineers"], bottom: ["South Alabama", "Jaguars", "South Alabama Jaguars"] };
+    const event = parseListing([
+      { id: "1", slug: "cfb-applst-sala-2026-11-27", title: "Appalachian State vs. South Alabama", startTime: "2026-11-27T20:00:00Z", teams: [{ name: "Mountaineers", alias: "Appalachian State" }, { name: "Jaguars", alias: "South Alabama" }] },
+    ])[0]!;
+    const market = { sportsMarketType: "moneyline", outcomes: '["Appalachian State", "South Alabama"]', clobTokenIds: '["APP", "USA"]', volume: "1000" };
+    expect(matchEvent([event], key)?.slug).toBe("cfb-applst-sala-2026-11-27");
+    expect(twoWayMarket(market, event.slug, key)).toBeNull();
+    expect(twoWayMarket(market, event.slug, withEventNames(key, event))!.tokens).toEqual([{ outcome: "top", token: "APP" }]);
+    // The other way round, the token still follows the team.
+    const crossed = { ...key, top: key.bottom, bottom: key.top };
+    expect(twoWayMarket(market, event.slug, withEventNames(crossed, event))!.tokens).toEqual([{ outcome: "top", token: "USA" }]);
   });
 
   it("reads soccer's three moneyline markets: each outcome's Yes token, the volumes summed", () => {

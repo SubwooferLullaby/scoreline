@@ -226,6 +226,22 @@ export function matchEvent(events: readonly PMEvent[], key: GameKey): PMEvent | 
   return best.e;
 }
 
+/**
+ * The key, with the matched event's own names for each side added: a market's
+ * outcomes can name a team as Polymarket's alias does ("Appalachian State",
+ * "Louisiana-Monroe") where ESPN writes "App State" and "UL Monroe". Safe
+ * because the event itself already matched strictly, by both teams.
+ */
+export function withEventNames(key: GameKey, event: PMEvent): GameKey {
+  if (event.teams.length !== 2) return key;
+  const sides = assignSides(event.teams[0]!.name, event.teams[1]!.name, key);
+  if (!sides) return key;
+  const own = (t: PMTeam) => [t.name, t.alias].filter((n): n is string => !!n);
+  const top = event.teams[sides.indexOf("top")]!;
+  const bottom = event.teams[sides.indexOf("bottom")]!;
+  return { ...key, top: [...key.top, ...own(top)], bottom: [...key.bottom, ...own(bottom)] };
+}
+
 // MARK: - The market
 
 export interface OutcomeToken {

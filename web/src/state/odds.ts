@@ -55,6 +55,7 @@ import {
   seriesFor,
   SOCKET,
   twoWayMarket,
+  withEventNames,
   type BookUpdate,
   type GameKey,
   type Market,
@@ -138,17 +139,18 @@ export async function findMarket(game: OddsGame): Promise<Market | null> {
   }
   if (!event) return null;
   const start = event.startTime;
+  const named = withEventNames(key, event);
   if (!isThreeWay(game.path)) {
     try {
       const json = await env.fetcher(marketURL(event.slug));
       const parent = marketEventSlug(json);
-      const two = parent == null || parent === event.slug ? twoWayMarket(json, event.slug, key) : null;
+      const two = parent == null || parent === event.slug ? twoWayMarket(json, event.slug, named) : null;
       if (two) return { ...two, start };
     } catch (error) {
       if (!(error instanceof HTTPError && error.status === 404)) throw error;
     }
   }
-  const market = marketFromEvent(await env.fetcher(eventURL(event.slug)), key);
+  const market = marketFromEvent(await env.fetcher(eventURL(event.slug)), named);
   return market ? { ...market, start } : null;
 }
 
